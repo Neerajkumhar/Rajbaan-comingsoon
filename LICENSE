@@ -1,0 +1,24 @@
+Copyright (c) 2026 Visuark. All rights reserved.
+https://visuark.com
+
+This repository, together with all of its contents, is the exclusive property of
+Visuark. It is published for viewing and for the operation of the Rajbaan
+coming-soon site.
+
+NO LICENSE IS GRANTED. Without the prior written permission of Visuark, you may not
+copy, modify, adapt, translate, redistribute, sublicense, publish, or create
+derivative works from this software or any part of it, nor may you use it, in whole
+or in part, to build a competing or derived work.
+
+The software is provided solely for the licensed use described above. It is
+furnished without warranty of any kind, express or implied, including but not
+limited to the warranties of merchantability, fitness for a particular purpose,
+accuracy, and non-infringement. In no event shall Visuark be liable for any claim,
+damages, or other liability, whether in an action of contract, tort, or otherwise,
+arising from, out of, or in connection with the software or its use.
+
+Third-party dependencies installed via npm remain subject to their own licences,
+as recorded in package-lock.json.
+
+The Rajbaan name, wordmark, and logo artwork are trademarks of their respective
+owner and are not licensed by this notice.

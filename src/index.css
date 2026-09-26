@@ -1,0 +1,95 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-ink: #1a1512;
+  --color-maroon: #7b1e1e;
+  --color-marigold: #e8a33d;
+  --color-turmeric: #f4b942;
+  --color-cashew: #f7f1e6;
+  --color-parchment: #efe3ce;
+  --color-whatsapp: #25d366;
+  /* WhatsApp brand green is far too light for white text: #ffffff on #25d366 is
+     1.98:1, well under the 4.5:1 AA minimum. This darker green keeps the brand
+     association and reaches 5.41:1, so the CTA label stays legible. */
+  --color-whatsapp-deep: #0f7a43;
+
+  --font-display: 'Noto Serif Devanagari', Georgia, serif;
+  --font-body: 'Noto Sans Devanagari', system-ui, sans-serif;
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* The pulse animates a shadow ring rather than opacity. Fading the badge to 0.55
+   dropped its label to 2.77:1 against marigold, below the 4.5:1 AA minimum, for
+   part of every cycle. A ring keeps the text at full opacity in every frame, so the
+   effect stays legible no matter how the palette changes. */
+@keyframes badge-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(232 163 61 / 0.65);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgb(232 163 61 / 0);
+  }
+}
+
+.animate-marquee {
+  animation: marquee-scroll 30s linear infinite;
+}
+
+.animate-badge-pulse {
+  animation: badge-pulse 2.4s ease-in-out infinite;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-cashew);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-turmeric);
+  outline-offset: 2px;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 500ms ease-out,
+    transform 500ms ease-out;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-marquee,
+  .animate-badge-pulse {
+    animation: none;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
