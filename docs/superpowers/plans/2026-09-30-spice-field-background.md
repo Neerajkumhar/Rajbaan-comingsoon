@@ -235,9 +235,6 @@ describe('the masala and dry-fruit motifs', () => {
 })
 ```
 
-Move the existing `import { Cashew, Chilli, StarAnise }` line so all imports sit in one
-statement at the top of the file — do not leave two import lines from the same module.
-
 - [ ] **Step 2: Run the test to verify it fails**
 
 Run: `npx vitest run src/test/SpiceMotif.test.jsx`
@@ -751,9 +748,12 @@ describe('the field in the page', () => {
     const { container } = render(<App />)
     const layer = container.querySelector('div[aria-hidden="true"].pointer-events-none')
     expect(layer).not.toBeNull()
-    // A sibling, not a child of main: a child would break the section-order assertion
-    // in App.test.jsx and would clip against main's own stacking context.
-    expect(layer.parentElement).toBe(container.firstChild)
+    // LanguageProvider renders no DOM wrapper, so the container is the field's real
+    // parent. The field must be a sibling of main, not a child of it: a child would
+    // break the section-order assertion in App.test.jsx and would clip against main's
+    // own stacking context.
+    expect(layer.parentElement).toBe(container)
+    expect(layer.parentElement).not.toBe(container.querySelector('main'))
   })
 
   it('lifts main above the field', () => {
@@ -860,20 +860,23 @@ is unchanged.
 Run: `npm run lint && npm run build`
 Expected: both clean.
 
-- [ ] **Step 7: Confirm the transfer-size budget from spec §7**
+- [ ] **Step 8: Confirm the transfer-size budget from spec §7**
 
-The spec caps this feature's added markup and CSS at 8 KB uncompressed. Measure it against
-the commit before this task:
+The spec caps this feature's added markup and CSS at 8 KB uncompressed. Measure the whole
+feature, not just this task: stashing would revert only `App.jsx` and `Footer.jsx`, leaving
+the Tasks 1–3 motifs and keyframe inside the "baseline" and understating the cost. The
+sibling checkout of `main` is the true pre-feature tree and already has `node_modules`.
 
 Run:
 ```bash
-git stash -q && npm run build >/dev/null && find dist/assets -name '*.js' -o -name '*.css' | xargs cat | wc -c
-git stash pop -q && npm run build >/dev/null && find dist/assets -name '*.js' -o -name '*.css' | xargs cat | wc -c
+(cd /home/tony/Desktop/Rajbaan && npm run build >/dev/null \
+  && cat dist/assets/*.js dist/assets/*.css | wc -c)
+npm run build >/dev/null && cat dist/assets/*.js dist/assets/*.css | wc -c
 ```
 Expected: the second number exceeds the first by well under 8192 bytes. If it does not,
 the seed or the path data has grown — trim before continuing rather than raising the cap.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add src/App.jsx src/components/Footer.jsx src/test/SpiceField.test.jsx
