@@ -113,6 +113,15 @@ marigold wash behind the logo.
 Both CTAs must be usable at 360 px width without wrapping or clipping, and the
 44×44 px minimum touch target applies to both.
 
+- **Spice field:** one fixed `z-0` layer behind the whole page, carrying exactly 20
+  hand-drawn masala and dry-fruit pieces on a single transform-only drift keyframe. It is
+  `aria-hidden` and `pointer-events-none`, and the content sits above it as a pair: `main`
+  and the footer are `relative z-10` against the field's own `z-0`. Both halves are
+  load-bearing. A `z-10` without `relative` orders nothing, and a field raised above
+  `z-10` paints over the content while still letting it be clicked — a fault that reads
+  as missing text rather than as a stacking bug. Fully specified in
+  `2026-09-30-spice-field-background-design.md`.
+
 ### 4.3 Marquee
 Full-bleed `maroon` band, ~48 px tall, gold text scrolling right-to-left:
 `हल्दी · मसाले · काजू · खजू · बादाम · अंजीर · इलायची · दालचीनी · सौंफ`
@@ -154,9 +163,9 @@ invisible on `ink`.
 ### 4.8 WhatsAppFab
 Fixed bottom-right circular button, WhatsApp green, 56 px, with an iOS safe-area inset.
 Visible on all viewports. `aria-hidden`, because the same action is available as a
-labelled button in the hero and the enquiry band. The footer carries bottom padding
-equal to the FAB height plus 16 px so the FAB can never sit on top of footer text on a
-short viewport.
+labelled button in the hero and the enquiry band. The footer carries 112 px of bottom
+padding, comfortably past the FAB height plus 16 px, so the FAB can never sit on top of
+footer text on a short viewport.
 
 ## 5. Bilingual content
 
@@ -174,19 +183,43 @@ observer hook, not in the language context.
 
 ## 6. Motion
 
-Four effects only, all hand-written — no animation library.
+Five effects only, all hand-written — no animation library.
 
 1. **Reveal on scroll** — sections fade from 0 opacity and 16 px below, easing to rest
    over 500 ms once, via `IntersectionObserver`, staggered 60 ms per index. The
    observer disconnects after firing.
-2. **Badge pulse** — opacity cycles 1 → 0.55 → 1 over 2.4 s, `ease-in-out`, infinite.
+2. **Badge pulse** — a marigold ring expands out of the badge and fades away, over 2.4 s,
+   `ease-in-out`, infinite. A ring rather than an opacity fade: fading the badge to 0.55
+   dropped its label to 2.77:1 against `marigold`, under the 4.5:1 minimum, for part of
+   every cycle.
 3. **Marquee scroll** — pure CSS keyframes, duplicated content, linear, 30 s per loop.
 4. **Card hover lift** — 2 px translate and shadow deepening, gated behind
    `@media (hover: hover) and (pointer: fine)` so it never sticks on touch devices.
+5. **Field drift** — the field's 20 pieces each translate 4–10 px on each axis and rotate
+   1–3° over 20–40 s, `ease-in-out`, `infinite alternate`, staggered by a negative delay
+   so they are not in lockstep. Slow enough to read as ambient rather than as motion on
+   the page.
+
+One keyframe serves all 20 pieces. Per-piece amplitude arrives through the `--drift-x`,
+`--drift-y` and `--drift-r` custom properties read inside the keyframe, and per-piece
+duration and delay are set inline, overriding the shorthand — twenty near-duplicate
+keyframes would be a worse trade than twenty inline values. A piece's *base* rotation
+rides the individual `rotate` property rather than `transform`, because CSS applies
+`rotate` before `transform` and the two therefore compose; carried on `transform` instead,
+the keyframe would overwrite it on every frame. `alternate` returns every piece to its
+origin, so nothing drifts out of frame over a long visit.
+
+`transform` is the only thing that animates. Per-piece opacity is static, between 0.10 and
+0.18, and is never animated: an animated opacity across 20 elements repaints every frame
+and drops frames on low-end mobile, where transform stays on the compositor. There is no
+`will-change` either — promoting 20 permanent layers costs more memory than the compositor
+saves on animation this slow. Nothing in the field runs per frame except the compositor:
+no canvas, no WebGL, no animation library, no per-frame JavaScript.
 
 Every one of these is disabled under `@media (prefers-reduced-motion: reduce)`, and
 reveal-animated sections must be visible by default if JavaScript fails or the observer
-never fires. Content is never hidden behind an animation that might not run.
+never fires. Content is never hidden behind an animation that might not run; the field's
+pieces stay on the page at their seeded positions, motionless.
 
 ## 7. Technical design
 
@@ -216,16 +249,34 @@ src/components/Enquiry.jsx
 src/components/Footer.jsx
 src/components/WhatsAppFab.jsx
 src/components/ContactButtons.jsx   the shared WhatsApp + call button pair
-src/components/SpiceMotif.jsx  three named inline SVG exports
+src/components/SpiceField.jsx       the fixed background layer and its 20-piece seed
+src/components/SpiceMotif.jsx       ten named inline SVG exports, each with a `solid` variant
 src/hooks/useReveal.js
 ```
 
-Each component owns one section and takes no props. `ContactButtons` exists because the
-WhatsApp/call pair appears in both the hero and the enquiry band and must not be
-copy-pasted — the prefilled message and the `tel:` target are defined once in
+Each section component owns one section and takes no props. `ContactButtons` exists
+because the WhatsApp/call pair appears in both the hero and the enquiry band and must not
+be copy-pasted — the prefilled message and the `tel:` target are defined once in
 `contact.js` and rendered once, in that component. Everything else reads from
-`content.js` and `LanguageContext`. No component needs to know about any other
-component, and the language context is the only state in the project.
+`content.js` and `LanguageContext`. No section knows about any other section, and the
+language context is the only state in the project. `SpiceField` is the one import between
+components, and it points the safe way: it draws from `SpiceMotif` and nothing draws from
+it, so the field can be deleted in one commit without touching a motif, and a new motif
+needs only naming in the seed.
+
+`SpiceField` is also the one component that carries its own data instead of reading
+`content.js`: a hardcoded 20-entry seed, one entry per piece, holding that piece's
+`motif`, `x`, `y`, `size`, `rotate`, `duration`, `delay`, `tone`, and `opacity`. The seed
+is written out rather than randomised at render time, deliberately — a random field
+differs between renders, so it can neither be asserted in a test nor reviewed, and a
+defect in it would not reproduce. `x` and `y` are viewport percentages, so the field
+reflows with width instead of crowding one edge on a wide screen; `size` stays in px, so
+a piece reads at the same physical size wherever it lands. The two together make density
+deliberately non-uniform — 20 fixed-size pieces pack far tighter on a 390 px phone than on
+a 1440 px desktop — which is acceptable because the field is decoration and the layer
+clips whatever falls outside it. Placement is spread across the width rather than
+clustered at the edges, because a field that thins out across the horizontal centre
+leaves the part of the page the visitor is actually looking at the emptiest.
 
 ### 7.3 Contact links
 `contact.js` is the single source of truth. It holds `9216487878` once and derives:
@@ -320,11 +371,23 @@ Vitest and React Testing Library cover the only logic in the project:
    corrupted stored value falls back to `en`.
 4. The WhatsApp CTA's `href` resolves to `wa.me/919216487878` with the encoded message.
 5. The visible phone digits and the `tel:` link both derive from the one constant.
+6. The field's invariants, each a regression that is invisible until it breaks: the
+   `solid` variant fills without dropping the stroke, the seven added motifs draw on the
+   shared viewBox, and the drift keyframe is read for the `--drift-*` custom properties it
+   actually reads rather than matched against the whole stylesheet, so a comment naming
+   them cannot stand in for a keyframe that baked in constants. The seed is pinned to its
+   constraints — 20 pieces, opacity 0.10–0.18, drift 4–10 px per axis and 1–3°, 20–40 s,
+   base rotation on `rotate` with no `transform`, durations and delays that genuinely
+   vary — and the layer's `aria-hidden`, `pointer-events-none`, `z-0` and `overflow-hidden`
+   are asserted alongside the `relative z-10` on `main` and the footer, because a field
+   raised above the content satisfies every other test in the suite.
 
-Presentational markup is not unit-tested. Visual correctness is checked by a human
-looking at the rendered page at the four widths in 7.5 — automated assertions cannot
-confirm the logo looks right, and per the no-image-review constraint the agent cannot
-see it.
+Presentational markup is not unit-tested, except where a class name or inline style is
+itself the guarantee — which is the case for each field assertion in item 6. Visual
+correctness is checked by a human looking at the rendered page at the four widths in 7.5:
+automated assertions cannot confirm the logo looks right, or that the field's pieces read
+as masala rather than as abstract shapes, and per the no-image-review constraint the agent
+cannot see it.
 
 ## 9. Out of scope for v1
 
