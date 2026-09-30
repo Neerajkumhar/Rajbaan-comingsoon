@@ -590,8 +590,11 @@ describe('SpiceField', () => {
     // rather than merging, so the inline width and height are the only sizing.
     const { pieces } = renderField()
     for (const svg of pieces) {
-      expect(svg).toHaveAttribute('width')
-      expect(svg).toHaveAttribute('height')
+      // Inline style, not a DOM attribute. React renders a numeric style width as
+      // style="width: 46px" and emits no width attribute, so toHaveAttribute('width')
+      // fails against the component the brief itself specifies.
+      expect(svg.style.width).not.toBe('')
+      expect(svg.style.height).not.toBe('')
     }
   })
 
@@ -751,10 +754,31 @@ export function SpiceField() {
 - [ ] **Step 4: Verify the built CSS actually contains the tone classes**
 
 Tailwind generates classes by scanning source text, so a runtime-built class name can be
-missing from the output with no error anywhere. Confirm the real artifact:
+missing from the output with no error anywhere. Confirm the real artifact.
 
-Run: `npm run build && grep -o 'text-marigold\|text-turmeric\|text-maroon\|text-ink' dist/assets/*.css | sort -u`
+A naive grep proves nothing here: this plan file contains all four class names as literals,
+and Tailwind scans it, so they appear in the CSS even when `SpiceField.jsx` contributes
+nothing. Move the scanner's other sources out of the way first, or the check is theatre.
+
+Run:
+```bash
+npm run build >/dev/null
+grep -o 'text-marigold\|text-turmeric\|text-maroon\|text-ink' dist/assets/*.css | sort -u
+```
 Expected: all four class names present.
+
+Then prove the check has teeth — build with the tone table replaced by a template literal
+and confirm `text-turmeric` disappears:
+```bash
+cp src/components/SpiceField.jsx /tmp/SpiceField.bak
+sed -i "s/turmeric: 'text-turmeric',/turmeric: \`text-\${piece.tone}\`,/" src/components/SpiceField.jsx
+npm run build >/dev/null
+grep -c 'text-turmeric' dist/assets/*.css || echo 'text-turmeric GONE - check has teeth'
+cp /tmp/SpiceField.bak src/components/SpiceField.jsx && npm run build >/dev/null
+git diff --exit-code -- src/components/SpiceField.jsx && echo 'component restored'
+```
+Expected with the template literal: `text-turmeric GONE - check has teeth`, and a clean
+`git diff` proving the component was restored. Do not commit a mutated component.
 
 - [ ] **Step 5: Run the test to verify it passes**
 
