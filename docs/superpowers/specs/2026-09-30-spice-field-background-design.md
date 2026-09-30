@@ -73,15 +73,23 @@ original three.
 ### 4.3 A `solid` variant
 
 The existing motifs are `fill: 'none'`. Outlined shapes at 10% opacity read as faint
-wireframe and largely disappear, so the field uses filled silhouettes instead of
-stroked outlines.
+wireframe and largely disappear, so the field renders each piece with a fill as well as
+its outline.
 
 `SpiceMotif.jsx` gains a `solid` boolean prop. When true, a piece renders with
-`fill: 'currentColor'` and `stroke: 'none'`; when absent or false, the current stroked
-behaviour is unchanged. The prop is implemented once in the shared `base` object so
-adding a motif does not repeat the branch. `fill: 'currentColor'` is correct for the
-field's tinted pieces and is also correct for any future solid icon, so it is not
-field-specific special-casing.
+`fill: 'currentColor'` at `fill-opacity: 0.28` and **keeps** its `currentColor` stroke;
+when absent or false, the current unfilled stroked behaviour is unchanged. The prop is
+implemented once in the shared `base` object so adding a motif does not repeat the
+branch. `fill-opacity` rather than a flat fill keeps the interior from reading as a hard
+slab at full strength, and is not field-specific special-casing — it is correct for any
+filled icon.
+
+The stroke is deliberately kept rather than switched off. Every existing motif is drawn
+with **open** paths — `Chilli` at `SpiceMotif.jsx:29` starts at `M26 10` and its last
+cubic ends at `(11, 33)`, never returning to the start — so `stroke: 'none'` would leave
+a fill that auto-closes the path into whatever shape the straight line happens to cut.
+Keeping the stroke makes the variant safe for open and closed paths alike, which is the
+only reason it can be trusted for artwork whose appearance cannot be reviewed.
 
 ### 4.4 `SpiceField.jsx`
 
@@ -95,7 +103,8 @@ A new component rendering one fixed, full-viewport layer:
 
 `x` and `y` are percentages of the viewport, so the field reflows with width instead of
 drifting toward one edge on wide screens. `size` is px. `rotate` is a static base
-rotation in degrees, distinct from the animated rotation in §4.5.
+rotation in degrees, distinct from the animated rotation in §4.5. `tone` is a
+`@theme` token name.
 
 The seed is hardcoded rather than randomised at runtime, deliberately. Random placement
 would differ between renders, which makes the field impossible to assert in a test and
@@ -111,6 +120,15 @@ One new `@keyframes drift` in `src/index.css`:
 
 - Translates 4–10 px on each axis and rotates 1–3°, `ease-in-out`, `infinite alternate`,
   20–40 s per piece, staggered by a negative `delay` so pieces are not in lockstep.
+- One keyframe serves all 20 pieces. Per-piece amplitude comes from the CSS custom
+  properties `--drift-x`, `--drift-y`, and `--drift-r`, read inside the keyframe; per-piece
+  duration and delay are set with inline `animationDuration` and `animationDelay`, which
+  override the shorthand on `.animate-drift`. No 20 near-duplicate keyframes.
+- A piece's **base** rotation is set with the individual `rotate` property, not
+  `transform`. CSS applies `translate`/`rotate`/`scale` before `transform`, so the base
+  rotation composes with the keyframe's `transform` rather than being overwritten by it.
+  Setting base rotation through `transform` instead would be silently replaced by the
+  animation on every frame.
 - `alternate` returns each piece to its origin, so the field never drifts out of frame
   over a long visit.
 - Opacity is **static per piece** and never animated. An animated `opacity` on 20
@@ -121,9 +139,11 @@ One new `@keyframes drift` in `src/index.css`:
 
 ### 4.6 Opacity and colour
 
-Per-piece opacity is static, between 0.08 and 0.18. The ceiling is set by legibility: the
+Per-piece opacity is static, between 0.10 and 0.18. The floor is set by legibility: the
 enquiry form and contact buttons sit on top of this layer, and pieces drifting under
 reading material must never approach the 4.5:1 AA threshold for the text they sit behind.
+The ceiling is set by the opposite risk — below roughly 0.10 the piece is not worth
+rendering at all.
 
 Tones are drawn from existing `@theme` tokens only — `marigold`, `turmeric`, `maroon`,
 `ink`. Adding `clove-brown` and `almond-cream` tokens was considered and deferred: §3 of
