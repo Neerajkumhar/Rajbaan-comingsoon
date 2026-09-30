@@ -48,6 +48,25 @@
   animation: badge-pulse 2.4s ease-in-out infinite;
 }
 
+/* One keyframe serves all 20 pieces. Amplitude arrives per piece through the custom
+   properties read below; duration and delay are set inline and override this shorthand.
+   A piece's base rotation uses the individual `rotate` property rather than `transform`,
+   because CSS applies rotate before transform and so the two compose instead of the
+   animation overwriting the base on every frame. */
+@keyframes drift {
+  from {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  to {
+    transform: translate3d(var(--drift-x, 8px), var(--drift-y, -6px), 0)
+      rotate(var(--drift-r, 3deg));
+  }
+}
+
+.animate-drift {
+  animation: drift 30s ease-in-out infinite alternate;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -82,6 +101,7 @@ body {
     scroll-behavior: auto;
   }
 
+  .animate-drift,
   .animate-marquee,
   .animate-badge-pulse {
     animation: none;
