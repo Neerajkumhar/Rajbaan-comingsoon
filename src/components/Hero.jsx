@@ -16,15 +16,13 @@ export function Hero() {
         ref={ref}
         className={`reveal relative mx-auto flex max-w-xl flex-col items-center text-center ${visible ? 'is-visible' : ''}`}
       >
-        <div className="w-full max-w-[420px] rounded-3xl border border-marigold bg-white p-8 shadow-lg shadow-ink/10 sm:p-10">
-          <img
-            src="/logo.png"
-            alt={t('hero.logoAlt')}
-            width="1200"
-            height="600"
-            className="mx-auto h-auto w-full object-contain"
-          />
-        </div>
+        <img
+          src="/logo.png"
+          alt={t('hero.logoAlt')}
+          width="1200"
+          height="456"
+          className="mx-auto h-auto w-full max-w-[480px] object-contain"
+        />
 
         <h1 className="mt-8 font-display text-4xl font-normal leading-[1.45] sm:text-5xl">
           {t('hero.wordmarkLocal')}

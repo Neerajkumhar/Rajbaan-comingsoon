@@ -27,8 +27,8 @@ looks finished enough that the brand owner is not embarrassed to share the link.
 
 ## 2. Constraints
 
-- **Asset:** the only brand asset available is `logo rajbaan.png` (1774×887, black on
-  white, fully opaque, 549 KB).
+- **Asset:** the only brand asset available is `logo rajbaan.png` (1774×887, 549 KB,
+  fully opaque, white line art on a black ground).
 - **No image review:** the implementing agent cannot see images. The logo's internal
   composition, whether it contains a baked-in tagline, and its optical balance are
   unknown. Visual decisions about the logo must be confirmed by a human looking at a
@@ -45,7 +45,7 @@ ticker band as the primary "Indian" signal. Mobile-first throughout.
 
 ### Palette
 
-The logo carries no colour (pure black on white), so the palette is derived from the
+The logo carries no colour (solid black ink), so the palette is derived from the
 product category.
 
 | Token           | Hex       | Use                                  |
@@ -90,14 +90,15 @@ at the top on scroll so the toggle is always reachable.
 
 ### 4.2 Hero
 The primary section. Vertically centred, `cashew` background with a soft radial
-marigold wash behind the logo card.
+marigold wash behind the logo.
 
-- **Logo card:** `public/logo.png` inside a white rounded panel with at least 32 px of
-  internal padding, a one-pixel marigold hairline border, and a soft shadow. The logo is
-  black-on-white and is never recoloured, so this light panel is mandatory — the mark
-  must not sit directly on the cream page or on any dark section. Maximum rendered
-  width 420 px, aspect ratio preserved, `object-contain` so the full mark is always
-  visible.
+- **Logo:** `public/logo.png` sits directly on the `cashew` page — no panel, border, or
+  shadow. The file is keyed to a transparent background (7.4), so a light card behind it
+  would only ever frame an empty rectangle. Because the mark is solid black ink on a
+  light ground it stays legible directly: 18.7:1 against `cashew`, and still 16:1 at the
+  heaviest point of the marigold wash. Maximum rendered width 480 px, aspect ratio
+  preserved, `object-contain` so the full mark is always visible. The mark must still
+  never be recoloured, so it does not belong on any dark section.
 - **Wordmark:** a bilingual lockup, always both scripts regardless of active language —
   `राजबान` in Devanagari display type, with `RAJBAAN` in letterspaced uppercase Latin
   beneath it. A brand lockup is not UI copy, so it does not change with the toggle.
@@ -199,7 +200,7 @@ index.html                     meta, Open Graph tags, font links
 README.md                      run/build/deploy steps, logo swap, placeholder URLs
 scripts/prepare-logo.py        derives public/logo.png and public/favicon.png
 public/favicon.png             derived from the logo
-public/logo.png                derived, downscaled, unmodified artwork
+public/logo.png                derived, background keyed out and trimmed to the ink
 src/main.jsx                   React root
 src/App.jsx                    section composition, wraps the language provider
 src/LanguageContext.jsx        language state, localStorage persistence, t() lookup
@@ -242,38 +243,45 @@ digits in the hero, the enquiry band, and the footer all read from the same cons
 so the displayed number and the dialled number can never disagree.
 
 ### 7.4 Logo asset processing
-`logo rajbaan.png` is 549 KB at 1774×887, far more than a mobile page needs, and its ink
-touches all four edges of the canvas — there is no built-in margin. Measured: 74% pure
-black, 3% pure white, 23% antialiased edge, and an alpha bounding box equal to the full
-canvas. Three consequences, all baked into the design:
+`logo rajbaan.png` is 549 KB at 1774×887, far more than a mobile page needs. Its art is
+white on a black ground, and the black is padding as much as canvas: measured, the ink
+occupies a 1620×615 box at an offset of (93, 109), so the real mark is 2.63:1 inside a
+2:1 canvas. Three consequences, all baked into the design:
 
-- **Padding is the card's job, not the image's.** The mark cannot sit flush inside the
-  hero card; the card carries at least 32 px of internal padding so the ink never
-  crowds its border.
-- **The mark is never inverted or recoloured.** Transparency-keying and tinting were
-  considered and dropped: the source is near-solid black over 74% of its area, so what
-  the mark actually depicts is unknown to the implementing agent (see constraint 2),
-  and a wrong guess renders an unreadable block. The original black-on-white artwork is
-  always shown unmodified.
-- **The favicon is not a square crop.** A centred square crop of a 2:1 mark whose ink
+- **The background is keyed out, and the mark is trimmed to its own bounding box.** The
+  source's luminance doubles as the alpha channel, so the black ground becomes fully
+  transparent and the white art stays white in the alpha and renders as black ink. The
+  canvas is then cropped to the ink's bounding box, because shipping the source's black
+  padding would shrink the mark inside the card and force the `height` attribute to
+  disagree with the file. The ink colour is never tinted or recoloured; only the
+  background is removed.
+- **Padding is the layout's job, not the image's.** Because the file is trimmed tight,
+  nothing ships with built-in margin. The hero gets its breathing room from the
+  `max-w-[480px]` cap plus the section's own padding, and the favicon from its 10%
+  margin.
+- **The favicon is not a square crop.** A centred square crop of a wide mark whose ink
   spans the full width would discard the left and right thirds. Instead a 512×512
-  square is composed with the whole mark scaled to fit inside a margin, on a white
-  ground.
+  square is composed with the whole mark scaled to fit inside a margin. The favicon
+  keeps an opaque white ground even though the logo is transparent: a transparent
+  black-ink favicon is invisible against dark browser chrome, which is the default in
+  several popular browsers.
 
 Two derived assets, both produced by `scripts/prepare-logo.py` (Pillow, no numpy):
 
-| Output               | Size    | Ground | Mark                            | Weight |
-| -------------------- | ------- | ------ | ------------------------------- | ------- |
-| `public/logo.png`    | 1200 px | white  | original artwork, unmodified    | 17 KB   |
-| `public/favicon.png` | 512 px  | white  | full mark inside a 10% margin  | 5 KB    |
+| Output               | Size    | Ground | Mark                        | Weight |
+| -------------------- | ------- | ------ | --------------------------- | ------ |
+| `public/logo.png`    | 1200 px | none   | trimmed ink, 2.63:1, RGBA  | 113 KB |
+| `public/favicon.png` | 512 px  | white  | full mark inside a 10% margin | 5 KB |
 
-Both outputs are written as 256-colour palette PNGs with dithering off. The artwork is
-black line art on white, so 256 entries are effectively unlimited for it: measured
-against the full-colour resize, quantisation shifts the mean pixel by 0.53/255 and no
-pixel by more than 24/255, which is below the threshold where banding becomes visible.
-That is what takes the logo from 273 KB to 17 KB with no visible change. PNG rather than
-WebP because `og:image` is consumed by WhatsApp and other preview generators that do not
-all accept WebP.
+The logo is written as a true-colour RGBA PNG because its alpha channel is the artwork:
+palette quantisation is meaningless once the background is keyed, and every colour in the
+file is black. Dropping to grayscale+alpha was measured and rejected — it saved only
+20 KB (PNG already compresses the three constant ink channels to nothing) and it renders
+pixel-identically on a white card, so the extra format risk buys nothing. The favicon is
+opaque flat line art, so it does use a 256-colour palette with dithering off: that is
+what takes it from 30 KB to 5 KB with no visible change. PNG rather than WebP because
+`og:image` is consumed by WhatsApp and other preview generators that do not all accept
+WebP.
 
 `logo rajbaan.png` at the repo root is never modified and never shipped. The script must
 print the output dimensions and file sizes so the reduction is verifiable.
@@ -315,7 +323,8 @@ Vitest and React Testing Library cover the only logic in the project:
 
 Presentational markup is not unit-tested. Visual correctness is checked by a human
 looking at the rendered page at the four widths in 7.5 — automated assertions cannot
-confirm the logo looks right, and per constraint 2 the agent cannot see it.
+confirm the logo looks right, and per the no-image-review constraint the agent cannot
+see it.
 
 ## 9. Out of scope for v1
 

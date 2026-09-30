@@ -24,9 +24,14 @@ Pages, or any web host. No server, no environment variables, no configuration.
 1. **The domain.** In `index.html`, replace all three occurrences of
    `https://example.invalid/rajbaan` with your real domain: the `rel="canonical"`
    link, `og:url`, and `og:image`.
-2. **The logo.** Replace `public/logo.png` and `public/favicon.png`. Regenerate them
-   from the master artwork with `python3 scripts/prepare-logo.py`, or drop in your own
-   files — keep the 2:1 aspect ratio for `logo.png` so the hero card does not distort.
+2. **The logo.** Replace `logo rajbaan.png` at the repo root, then run
+   `python3 scripts/prepare-logo.py` to derive `public/logo.png` and
+   `public/favicon.png`. The script keys the master's background out to transparency,
+   crops to the ink's bounding box, and scales to 1200 px wide — so the mark ships with
+   no padding of its own and the hero card supplies the margin. If you drop in your own
+   files instead, keep `logo.png` transparent and update the `width`/`height`
+   attributes in `src/components/Hero.jsx` to match its real dimensions, or the page
+   will reserve the wrong box and shift on load.
 3. **The phone number.** `src/contact.js` holds it in exactly one place,
    `PHONE_DIGITS`. Change it there and the visible text, the WhatsApp link, and the
    `tel:` link all follow.
