@@ -435,10 +435,11 @@ describe('the drift keyframe', () => {
     // Assert that .animate-drift is actually switched off, not merely named inside the
     // query. Checking for the name alone passes if the declaration is commented out, and
     // it cannot see `animation-duration: 0.01ms` — a widely copied reduced-motion idiom
-    // that leaves a 20-element field animating.
+    // that leaves a 20-element field animating. `[^{}]*` rather than `[\s\S]*?` so the name
+    // and the declaration must share a single rule.
     const media = /@media \(prefers-reduced-motion: reduce\)\s*\{(?:[^{}]|\{[^{}]*\})*\}/.exec(CSS)
     expect(media).not.toBeNull()
-    expect(media[0]).toMatch(/\.animate-drift[\s\S]*?\{\s*animation:\s*none\s*;/)
+    expect(media[0]).toMatch(/\.animate-drift[^{}]*\{\s*animation:\s*none\s*;/)
   })
 
   it('promotes nothing to its own layer', () => {
