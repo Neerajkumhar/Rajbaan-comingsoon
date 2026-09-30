@@ -57,8 +57,10 @@ export const PIECES = [
 
 // Tailwind scans source text for whole class names, so a tone must be spelled out in
 // full here. `text-${tone}` would produce a class that exists in no stylesheet, and the
-// pieces would render with the inherited body colour.
-const TONES = {
+// pieces would render with the inherited body colour. Exported so a test can assert the
+// class string the DOM actually receives: re-deriving the `text-${tone}` mapping in the
+// test would restate this file's own assumption and prove nothing about what is rendered.
+export const TONES = {
   ink: 'text-ink',
   marigold: 'text-marigold',
   maroon: 'text-maroon',

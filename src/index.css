@@ -27,7 +27,7 @@
 }
 
 /* The pulse animates a shadow ring rather than opacity. Fading the badge to 0.55
-   dropped its label to 2.77:1 against marigold, below the 4.5:1 AA minimum, for
+   dropped its label to 3.14:1 against marigold, below the 4.5:1 AA minimum, for
    part of every cycle. A ring keeps the text at full opacity in every frame, so the
    effect stays legible no matter how the palette changes. */
 @keyframes badge-pulse {

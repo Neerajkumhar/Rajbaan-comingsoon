@@ -1,7 +1,7 @@
 # Spice field background — design
 
 **Date:** 2026-09-30
-**Status:** Draft for review
+**Status:** Shipped; recorded in the coming-soon spec, sections 6, 7.2 and 8
 **Supersedes:** nothing. Adds a new section to the existing coming-soon spec.
 
 ## 1. Goal
@@ -36,8 +36,9 @@ asset enters the repository.
   with `.animate-marquee` / `.animate-badge-pulse` wrappers.
 - The single `prefers-reduced-motion: reduce` block in `src/index.css` disables both
   existing animations and neutralises `.reveal`.
-- `TopBar` is `sticky top-0 z-40`. `WhatsAppFab` is `fixed right-4 z-50`.
-  `main` and `Footer` have no positioning or z-index.
+- `TopBar` is `sticky top-0 z-40`. `WhatsAppFab` is `fixed right-4 z-50`. `main` and
+  `Footer` were static until §4.8 gave them `relative z-10`, which leaves the shipped ladder
+  field `z-0` → `main`/`Footer` `z-10` → header `z-40` → FAB `z-50`.
 - Palette tokens live in the `@theme` block in `src/index.css`: `ink`, `maroon`, `marigold`,
   `turmeric`, `cashew`, `parchment`, `whatsapp`, `whatsapp-deep`.
 
@@ -185,13 +186,30 @@ imports the other in the wrong direction.
 
 ## 6. Testing
 
-The base spec does not unit-test presentational markup. This adds one test file because
-two of the field's properties are regressions that are invisible until they break:
+The base spec does not unit-test presentational markup. The branch added two test files —
+`SpiceField.test.jsx` and `index-css.test.jsx` — and extended the two that already covered
+the code it touched, `SpiceMotif.test.jsx` and `App.test.jsx`. Base spec §8 item 6 is the
+canonical list; what follows is why each of the field's properties is a regression that is
+invisible until it breaks:
 
 1. The layer is `aria-hidden` — a decorative field read aloud is a real accessibility
    failure, and nothing else would catch it.
 2. The rendered piece count matches the seed length, so a motif that fails to resolve
    cannot silently reduce the field.
+3. The layer's own `z-0`, `fixed`, `inset-0`, `overflow-hidden` and `pointer-events-none`
+   are asserted, alongside the `relative z-10` on `main` and the footer. A field raised
+   above the content satisfies every other assertion in the suite, and `z-0` orders nothing
+   unless the layer is actually `fixed` and covers the viewport.
+4. Every seeded value is read back off the rendered element — `left`, `top`, `rotate`,
+   `animationDuration`, `animationDelay`, the three `--drift-*` properties and the tone
+   class — rather than off the `PIECES` literal. The literal is the seed's own description
+   of itself, so an assertion against it cannot see a style the component stopped applying.
+   This matters most for the drift amplitudes: the keyframe's `var(--drift-x, 8px)`
+   fallbacks are in range by design, so a piece that never receives its amplitude drifts in
+   lockstep with the rest of the field rather than failing anything.
+5. The four tone class names are pinned as literals. Tailwind emits them from the `@theme`
+   tokens at build time, so `src/index.css` cannot be scanned for them; the emitted name is
+   as far as the suite can reach, and the build is what turns it into a rule.
 
 `x`, `y`, and `tone` are module constants, not content, so they need no translation and
 are deliberately excluded from the `en`/`hi` parity test in the base spec.

@@ -3,10 +3,30 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
-const CSS = readFileSync(
-  join(dirname(fileURLToPath(import.meta.url)), '..', 'index.css'),
-  'utf8',
+const SRC = join(dirname(fileURLToPath(import.meta.url)), '..')
+const CSS = readFileSync(join(SRC, 'index.css'), 'utf8')
+
+// Tailwind compiles a utility class written in JSX into `filter:` or `will-change:` in the
+// *built* stylesheet, so scanning src/index.css cannot see one — the text that produced it
+// is not in this file at all. A `blur-[1px]` on a piece repaints it every frame exactly like
+// the CSS this file already guards against, and emits no `filter` substring to match.
+// Scoped to the three files the field feature touched: a whole-tree scan is not available,
+// because ContactButtons and WhatsAppFab carry a pre-existing `hover:brightness-95`, itself
+// a filter utility, and that predates the field and is none of its business.
+const FEATURE_JSX = ['App.jsx', 'components/SpiceField.jsx', 'components/SpiceMotif.jsx'].map(
+  (rel) => [rel, readFileSync(join(SRC, rel), 'utf8')],
 )
+
+// Matched as class-name families rather than as the emitted property names, because these
+// are the spellings that compile to `filter:` and `will-change:`. The separator alternation
+// matters: an arbitrary value arrives as `blur-[1px]`, so requiring a word character after
+// the dash would miss the very case this guard exists for, and several of these utilities
+// are bare (`grayscale`, `invert`) with no dash at all. A comment that happened to contain
+// one of these words would fail this — loudly, and fixed by rewording, which is the right
+// way round compared with a utility slipping through unnoticed.
+const WILL_CHANGE_UTILITY = /\bwill-change\b/
+const FILTER_UTILITY =
+  /\bfilter\b|\b(?:blur|backdrop-blur|brightness|contrast|drop-shadow|grayscale|hue-rotate|invert|saturate|sepia)(?:-|\b)/
 
 describe('the drift keyframe', () => {
   it('exists', () => {
@@ -56,11 +76,17 @@ describe('the drift keyframe', () => {
 
   it('promotes nothing to its own layer', () => {
     expect(CSS).not.toContain('will-change')
+    for (const [name, source] of FEATURE_JSX) {
+      expect(source, name).not.toMatch(WILL_CHANGE_UTILITY)
+    }
   })
 
   it('filters nothing anywhere in the feature', () => {
     // The keyframe guard above only covers the keyframe. `filter` outside it — on
     // .animate-drift, say — would repaint every frame just the same.
     expect(CSS).not.toContain('filter')
+    for (const [name, source] of FEATURE_JSX) {
+      expect(source, name).not.toMatch(FILTER_UTILITY)
+    }
   })
 })

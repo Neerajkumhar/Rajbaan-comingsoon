@@ -2,7 +2,7 @@ import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import App from '../App.jsx'
 import { SpiceField } from '../components/SpiceField.jsx'
-import { PIECES, MOTIFS } from '../components/SpiceField.jsx'
+import { PIECES, MOTIFS, TONES } from '../components/SpiceField.jsx'
 
 function renderField() {
   const { container } = render(<SpiceField />)
@@ -51,9 +51,48 @@ describe('SpiceField', () => {
     }
   })
 
-  it('uses only palette tones that exist in the stylesheet', () => {
+  it('uses only the four palette tones', () => {
     const tones = [...new Set(PIECES.map((piece) => piece.tone))]
     expect([...tones].sort()).toEqual(['ink', 'marigold', 'maroon', 'turmeric'])
+    // Pin the class names as literals rather than deriving them from the tone name, which
+    // is what the producer does and what this assertion must not assume. A misspelling —
+    // `text-margold` — yields a class in no stylesheet, and the pieces then render in the
+    // inherited body colour. Any check that read the map back would watch both sides move
+    // together and stay green. Tailwind emits these utilities from the @theme tokens at
+    // build time, so `src/index.css` cannot be scanned for them; the emitted name is as
+    // far as this suite can reach, and the build is what turns it into a rule.
+    expect(TONES).toEqual({
+      ink: 'text-ink',
+      marigold: 'text-marigold',
+      maroon: 'text-maroon',
+      turmeric: 'text-turmeric',
+    })
+  })
+
+  it('carries every seeded value onto the DOM', () => {
+    // This is the seam the rest of the file cannot reach. Every other test here reads the
+    // `PIECES` literal, which is the seed's own description of itself: delete `left` and
+    // `top` from the style object, or the three `--drift-*` properties, or misspell a tone
+    // class, and the field breaks on the page while the suite stays green. The keyframe's
+    // `var(--drift-x, 8px)` fallbacks are in range by design, so a piece that never
+    // receives its amplitude drifts in lockstep with every other piece rather than
+    // failing anything. This test reads the rendered element instead, which is the only
+    // place a dropped style is observable.
+    const { pieces } = renderField()
+    PIECES.forEach((piece, i) => {
+      const el = pieces[i]
+      expect(el.style.left).toBe(`${piece.x}%`)
+      expect(el.style.top).toBe(`${piece.y}%`)
+      expect(el.style.rotate).toBe(`${piece.rotate}deg`)
+      expect(el.style.animationDuration).toBe(`${piece.duration}s`)
+      expect(el.style.animationDelay).toBe(`${piece.delay}s`)
+      expect(el.style.getPropertyValue('--drift-x')).toBe(piece.driftX)
+      expect(el.style.getPropertyValue('--drift-y')).toBe(piece.driftY)
+      expect(el.style.getPropertyValue('--drift-r')).toBe(piece.driftR)
+      // `className` on an <svg> is an SVGAnimatedString, not a string, so `baseVal` is
+      // the property that actually holds the class list here.
+      expect(el.className.baseVal).toContain(TONES[piece.tone])
+    })
   })
 
   it('sizes each piece inline and carries base rotation on `rotate`, not `transform`', () => {

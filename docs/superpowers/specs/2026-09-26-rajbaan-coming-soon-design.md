@@ -196,7 +196,7 @@ Five effects only, all hand-written — no animation library.
    observer disconnects after firing.
 2. **Badge pulse** — a marigold ring expands out of the badge and fades away, over 2.4 s,
    `ease-in-out`, infinite. A ring rather than an opacity fade: fading the badge to 0.55
-   dropped its label to 2.77:1 against `marigold`, under the 4.5:1 minimum in section 3,
+   dropped its label to 3.14:1 against `marigold`, under the 4.5:1 minimum in section 3,
    for part of every cycle.
 3. **Marquee scroll** — pure CSS keyframes, duplicated content, linear, 30 s per loop.
 4. **Card hover lift** — 2 px translate and shadow deepening, gated behind
@@ -266,9 +266,10 @@ because the WhatsApp/call pair appears in both the hero and the enquiry band and
 be copy-pasted — the prefilled message and the `tel:` target are defined once in
 `contact.js` and rendered once, in that component. Everything else reads from
 `content.js` and `LanguageContext`. No section knows about any other section, and the
-language context is the only state in the project. `SpiceField` → `SpiceMotif` is the only
-import between components other than the shared `ContactButtons`, and it points the safe
-way: it draws from `SpiceMotif` and nothing draws from it, so the field can be deleted in
+language context is the only state in the project. Four imports cross between components:
+`Hero` and `Enquiry` → the shared `ContactButtons`, `Categories` → `SpiceMotif`, and
+`SpiceField` → `SpiceMotif`. The field's is the newest, and it points the safe way: it
+draws from `SpiceMotif` and nothing draws from it, so the field can be deleted in
 one commit without touching a motif, and a new motif needs only naming in the seed.
 
 `SpiceField` is also the one component that carries its own data instead of reading
