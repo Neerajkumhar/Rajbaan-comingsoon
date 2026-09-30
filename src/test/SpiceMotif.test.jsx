@@ -12,6 +12,7 @@ import {
   Raisin,
   StarAnise,
 } from '../components/SpiceMotif.jsx'
+import * as SpiceMotif from '../components/SpiceMotif.jsx'
 
 function svgOf(element) {
   const { container } = render(element)
@@ -63,7 +64,13 @@ const NEW_MOTIFS = { Almond, BayLeaf, Cardamom, Cinnamon, Clove, Pepper, Raisin 
 
 describe('the masala and dry-fruit motifs', () => {
   it('exports all seven', () => {
+    // The key count alone is a tautology: the literal has seven keys whether or not the
+    // module exports them. The named imports bind to undefined when an export is missing,
+    // so read the module's real export surface to prove each name resolves.
     expect(Object.keys(NEW_MOTIFS)).toHaveLength(7)
+    for (const [name] of Object.entries(NEW_MOTIFS)) {
+      expect(typeof SpiceMotif[name], name).toBe('function')
+    }
   })
 
   it.each(Object.entries(NEW_MOTIFS))('draws %s on the shared viewBox', (name, Motif) => {
@@ -82,6 +89,9 @@ describe('the masala and dry-fruit motifs', () => {
 
   it('supports the solid variant on every new motif', () => {
     for (const Motif of Object.values(NEW_MOTIFS)) {
+      // Assert the unfilled default first, so the fill below proves `solid` did the work
+      // rather than a motif being filled unconditionally.
+      expect(svgOf(<Motif />)).toHaveAttribute('fill', 'none')
       expect(svgOf(<Motif solid />)).toHaveAttribute('fill', 'currentColor')
     }
   })
