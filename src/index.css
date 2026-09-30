@@ -17,17 +17,21 @@
   --font-body: 'Noto Sans Devanagari', system-ui, sans-serif;
 }
 
-/* The loop distance is one viewport width, not half the track. A -50% endpoint is the
-   usual trick, but it only lands on the seam when the track is at least twice the
-   viewport; at nine names per copy it was 1.33x, so the track's right edge cleared the
-   screen and the last third of every cycle showed blank maroon. Translating exactly
-   -100vw puts the seam at the viewport edge for any copy count and any screen. */
+/* The loop travels exactly one copy of the list, measured at runtime and passed in as
+   --marquee-distance. The two CSS-only alternatives both seam wrongly here. -50% of the
+   track needs the track to be at least twice the viewport, and at one copy per screen it
+   was not, so the track ran out and the cycle ended in blank maroon. -100vw needs a copy to
+   be exactly one viewport wide, which `w-screen` forced without filling it: nine names cover
+   1019px of a 1440px copy, so 421px of blank opened inside every copy instead. A pixel
+   distance cannot depend on the viewport either, since a copy of nine names is 957px wide
+   whether the screen is 390px or 2560px — which is why the count is measured too. The
+   fallback keeps the band moving before the measurement lands. */
 @keyframes marquee-scroll {
   from {
     transform: translateX(0);
   }
   to {
-    transform: translateX(-100vw);
+    transform: translateX(var(--marquee-distance, 300px));
   }
 }
 

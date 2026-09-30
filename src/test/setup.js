@@ -16,3 +16,13 @@ window.matchMedia = (query) => ({
   removeListener() {},
   dispatchEvent: () => false,
 })
+
+// jsdom has no ResizeObserver either, and `Marquee` observes its first copy to learn how
+// wide a copy is, since that width depends on the rendered text. A stub that never fires is
+// the right default here: with no layout in jsdom there is nothing to report, so every test
+// that does not care reads the unmeasured state. Tests that do care install their own.
+globalThis.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
