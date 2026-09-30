@@ -28,7 +28,7 @@ describe('SpiceField', () => {
     expect(layer.className).toContain('pointer-events-none')
   })
 
-  it('clips its own pieces so nothing widens the document', () => {
+  it('clips its own pieces inside the layer', () => {
     const { layer } = renderField()
     expect(layer.className).toContain('overflow-hidden')
   })
@@ -47,16 +47,22 @@ describe('SpiceField', () => {
     expect([...tones].sort()).toEqual(['ink', 'marigold', 'maroon', 'turmeric'])
   })
 
-  it('sizes each piece inline and never through a Tailwind class', () => {
+  it('sizes each piece inline and carries base rotation on `rotate`, not `transform`', () => {
     // base carries className 'h-12 w-12'; passing className replaces it wholesale
     // rather than merging, so the inline width and height are the only sizing.
     // Read them off the style object rather than as attributes: `toHaveAttribute`
     // would ask for the SVG geometry attribute, which React never derives from an
     // inline width, so that assertion could only fail however the piece is sized.
+    // The `rotate` half is the load-bearing part: the drift keyframe animates
+    // `transform`, and CSS applies `rotate` before `transform`, so the base tilt
+    // composes with the drift. Moving the base rotation onto `transform` would let
+    // the keyframe overwrite it on every frame, and nothing else would notice.
     const { pieces } = renderField()
     for (const svg of pieces) {
       expect(svg.style.width).not.toBe('')
       expect(svg.style.height).not.toBe('')
+      expect(svg.style.rotate).not.toBe('')
+      expect(svg.style.transform).toBe('')
     }
   })
 
@@ -68,8 +74,14 @@ describe('SpiceField', () => {
     const { pieces } = renderField()
     for (const svg of pieces) {
       expect(svg.style.animationName).toBe('')
-      expect(svg.style.opacity).not.toBe('')
     }
+    // React renders PIECES in order, so index i addresses the same piece on both
+    // sides. Asserting the seeded value rather than mere presence is what makes a
+    // swapped or scaled opacity fail here instead of surviving as a subtle drift.
+    PIECES.forEach((piece, i) => {
+      expect(pieces[i].style.opacity).toBe(String(piece.opacity))
+      expect(pieces[i].style.width).toBe(`${piece.size}px`)
+    })
   })
 
   it('varies the drift instead of moving every piece in lockstep', () => {
