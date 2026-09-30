@@ -223,11 +223,18 @@ import {
 Then append:
 
 ```jsx
+import * as SpiceMotif from '../components/SpiceMotif.jsx'
+
 const NEW_MOTIFS = { Almond, BayLeaf, Cardamom, Cinnamon, Clove, Pepper, Raisin }
 
 describe('the masala and dry-fruit motifs', () => {
   it('exports all seven', () => {
+    // Counting the keys of a local literal cannot fail: it holds whether or not the
+    // module exports anything. Assert against the module's real export surface.
     expect(Object.keys(NEW_MOTIFS)).toHaveLength(7)
+    for (const name of Object.keys(NEW_MOTIFS)) {
+      expect(SpiceMotif[name], name).toBeTypeOf('function')
+    }
   })
 
   it.each(Object.entries(NEW_MOTIFS))('draws %s on the shared viewBox', (name, Motif) => {
@@ -246,6 +253,7 @@ describe('the masala and dry-fruit motifs', () => {
 
   it('supports the solid variant on every new motif', () => {
     for (const Motif of Object.values(NEW_MOTIFS)) {
+      expect(svgOf(<Motif />)).toHaveAttribute('fill', 'none')
       expect(svgOf(<Motif solid />)).toHaveAttribute('fill', 'currentColor')
     }
   })
@@ -343,7 +351,8 @@ export function Raisin({ solid, ...props }) {
 
 Run: `npx vitest run src/test/SpiceMotif.test.jsx`
 Expected: PASS — 28 tests: 4 from Step 1 plus `exports all seven`, three `it.each` blocks
-of 7, `supports the solid variant`, and `never forwards solid to the DOM`.
+of 7, `supports the solid variant`, and `never forwards solid to the DOM`. (`exports all
+seven` must fail here: the module exports none of the seven yet.)
 
 - [ ] **Step 5: Lint**
 
