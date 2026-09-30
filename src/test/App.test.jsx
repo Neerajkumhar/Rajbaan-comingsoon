@@ -41,6 +41,15 @@ describe('App', () => {
     ])
   })
 
+  it('raises the sticky bar and the floating button above the drifting field', () => {
+    // z-index is one page-wide stack, so these live with page composition rather than in
+    // the field's own file: the field's job is to stay behind this, and a change to the
+    // header's or the button's layer belongs to the page, not to the field.
+    const { container } = render(<App />)
+    expect(container.querySelector('header').className).toContain('z-40')
+    expect(container.querySelector('a[tabindex="-1"]').className).toContain('z-50')
+  })
+
   it('has exactly one h1, carrying the brand name', () => {
     render(<App />)
     const h1s = screen.getAllByRole('heading', { level: 1 })

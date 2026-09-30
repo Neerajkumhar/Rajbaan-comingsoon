@@ -27,6 +27,14 @@ describe('SpiceField', () => {
     const { layer } = renderField()
     expect(layer).toHaveAttribute('class')
     expect(layer.className).toContain('pointer-events-none')
+    // z-0 is what keeps the field decorative. Raise it — to z-20 to stack it above the
+    // lifted main, or to z-[60] because the motifs read faintly — and the field paints
+    // over the whole page, content included, while every other test in the suite stays
+    // green: nothing else measures this layer against the content. inset-0 and fixed
+    // ride with it because a z-index only orders a box that actually covers the viewport.
+    expect(layer.className).toContain('z-0')
+    expect(layer.className).toContain('inset-0')
+    expect(layer.className).toContain('fixed')
   })
 
   it('clips its own pieces inside the layer', () => {
@@ -125,7 +133,6 @@ describe('the field in the page', () => {
     // break the section-order assertion in App.test.jsx and would clip against main's
     // own stacking context.
     expect(layer.parentElement).toBe(container)
-    expect(layer.parentElement).not.toBe(container.querySelector('main'))
   })
 
   it('lifts main above the field', () => {
@@ -141,27 +148,5 @@ describe('the field in the page', () => {
     const footer = container.querySelector('footer')
     expect(footer.className).toContain('relative')
     expect(footer.className).toContain('z-10')
-  })
-
-  it('leaves the sticky bar and the floating button above both', () => {
-    const { container } = render(<App />)
-    expect(container.querySelector('header').className).toContain('z-40')
-    expect(container.querySelector('a[tabindex="-1"]').className).toContain('z-50')
-  })
-
-  it('does not add the field to the page section order', () => {
-    const { container } = render(<App />)
-    const order = [...container.querySelectorAll('header, main > *, footer')].map((node) =>
-      node.tagName.toLowerCase(),
-    )
-    expect(order).toEqual([
-      'header',
-      'section',
-      'div',
-      'section',
-      'section',
-      'section',
-      'footer',
-    ])
   })
 })
