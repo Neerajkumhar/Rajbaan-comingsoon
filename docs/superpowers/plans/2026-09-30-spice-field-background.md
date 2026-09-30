@@ -408,11 +408,14 @@ describe('the drift keyframe', () => {
   })
 
   it('animates in the compositor-friendly properties only', () => {
-    // Stop at the next @media. Slicing to end-of-file would swallow the
-    // prefers-reduced-motion block, whose `.reveal` rule legitimately sets `opacity`.
-    const start = CSS.indexOf('@keyframes drift')
-    const end = CSS.indexOf('@media', start)
-    const block = CSS.slice(start, end === -1 ? undefined : end)
+    // Capture the keyframe's own braces. Any span-based slice is wrong here: the
+    // stylesheet has `.reveal` rules that legitimately set `opacity` both in the base
+    // rules and inside prefers-reduced-motion, so slicing from `@keyframes drift` to the
+    // next @media — or to end-of-file — picks up an unrelated `opacity` and fails against
+    // correct CSS. `from`/`to` nest one level, hence the inner brace alternative.
+    const match = /@keyframes drift\s*\{(?:[^{}]|\{[^{}]*\})*\}/.exec(CSS)
+    expect(match).not.toBeNull()
+    const block = match[0]
     // opacity is static per piece by design; animating it on 20 elements repaints
     // every frame and drops frames on low-end mobile.
     expect(block).not.toContain('opacity')
