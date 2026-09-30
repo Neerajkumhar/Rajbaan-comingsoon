@@ -4,7 +4,7 @@ export function Footer() {
   const { t } = useLanguage()
 
   return (
-    <footer className="bg-ink px-4 pb-28 pt-14 text-cashew sm:pb-28">
+    <footer className="relative z-10 bg-ink px-4 pb-28 pt-14 text-cashew sm:pb-28">
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 text-center">
         <p className="font-display text-2xl">{t('hero.wordmarkLocal')}</p>
         <p className="text-sm text-cashew/70">{t('footer.descriptor')}</p>

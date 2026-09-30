@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import App from '../App.jsx'
 import { SpiceField } from '../components/SpiceField.jsx'
 import { PIECES, MOTIFS } from '../components/SpiceField.jsx'
 
@@ -111,5 +112,56 @@ describe('SpiceField', () => {
       expect(piece.duration).toBeGreaterThanOrEqual(20)
       expect(piece.duration).toBeLessThanOrEqual(40)
     }
+  })
+})
+
+describe('the field in the page', () => {
+  it('mounts the field as a sibling above the content stack', () => {
+    const { container } = render(<App />)
+    const layer = container.querySelector('div[aria-hidden="true"].pointer-events-none')
+    expect(layer).not.toBeNull()
+    // LanguageProvider renders no DOM wrapper, so the container is the field's real
+    // parent. The field must be a sibling of main, not a child of it: a child would
+    // break the section-order assertion in App.test.jsx and would clip against main's
+    // own stacking context.
+    expect(layer.parentElement).toBe(container)
+    expect(layer.parentElement).not.toBe(container.querySelector('main'))
+  })
+
+  it('lifts main above the field', () => {
+    const { container } = render(<App />)
+    const main = container.querySelector('main')
+    expect(main.className).toContain('relative')
+    expect(main.className).toContain('z-10')
+  })
+
+  it('lifts the footer above the field', () => {
+    // The footer is an opaque dark band. Left static, pieces would drift across it.
+    const { container } = render(<App />)
+    const footer = container.querySelector('footer')
+    expect(footer.className).toContain('relative')
+    expect(footer.className).toContain('z-10')
+  })
+
+  it('leaves the sticky bar and the floating button above both', () => {
+    const { container } = render(<App />)
+    expect(container.querySelector('header').className).toContain('z-40')
+    expect(container.querySelector('a[tabindex="-1"]').className).toContain('z-50')
+  })
+
+  it('does not add the field to the page section order', () => {
+    const { container } = render(<App />)
+    const order = [...container.querySelectorAll('header, main > *, footer')].map((node) =>
+      node.tagName.toLowerCase(),
+    )
+    expect(order).toEqual([
+      'header',
+      'section',
+      'div',
+      'section',
+      'section',
+      'section',
+      'footer',
+    ])
   })
 })
