@@ -14,9 +14,14 @@ describe('the drift keyframe', () => {
   })
 
   it('reads per-piece amplitude from custom properties', () => {
-    expect(CSS).toContain('--drift-x')
-    expect(CSS).toContain('--drift-y')
-    expect(CSS).toContain('--drift-r')
+    // Assert inside the keyframe, not against the whole file: a comment naming the three
+    // properties would satisfy a whole-file toContain while the keyframe had baked
+    // constants, collapsing one shared keyframe back into per-piece values.
+    const match = /@keyframes drift\s*\{(?:[^{}]|\{[^{}]*\})*\}/.exec(CSS)
+    expect(match).not.toBeNull()
+    expect(match[0]).toMatch(/var\(--drift-x,\s*8px\)/)
+    expect(match[0]).toMatch(/var\(--drift-y,\s*-6px\)/)
+    expect(match[0]).toMatch(/var\(--drift-r,\s*3deg\)/)
   })
 
   it('animates in the compositor-friendly properties only', () => {
@@ -39,11 +44,22 @@ describe('the drift keyframe', () => {
   })
 
   it('is disabled under prefers-reduced-motion', () => {
-    const media = CSS.slice(CSS.indexOf('@media (prefers-reduced-motion: reduce)'))
-    expect(media).toContain('.animate-drift')
+    // Assert that .animate-drift is actually switched off, not merely named inside the
+    // query. Checking for the name alone passes if the declaration is commented out, and
+    // it cannot see `animation-duration: 0.01ms` — a widely copied reduced-motion idiom
+    // that leaves a 20-element field animating.
+    const media = /@media \(prefers-reduced-motion: reduce\)\s*\{(?:[^{}]|\{[^{}]*\})*\}/.exec(CSS)
+    expect(media).not.toBeNull()
+    expect(media[0]).toMatch(/\.animate-drift[\s\S]*?\{\s*animation:\s*none\s*;/)
   })
 
   it('promotes nothing to its own layer', () => {
     expect(CSS).not.toContain('will-change')
+  })
+
+  it('filters nothing anywhere in the feature', () => {
+    // The keyframe guard above only covers the keyframe. `filter` outside it — on
+    // .animate-drift, say — would repaint every frame just the same.
+    expect(CSS).not.toContain('filter')
   })
 })
