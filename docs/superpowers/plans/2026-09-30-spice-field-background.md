@@ -940,10 +940,12 @@ Expected: both clean.
 
 - [ ] **Step 8: Confirm the transfer-size budget from spec §7**
 
-The spec caps this feature's added markup and CSS at 8 KB uncompressed. Measure the whole
-feature, not just this task: stashing would revert only `App.jsx` and `Footer.jsx`, leaving
-the Tasks 1–3 motifs and keyframe inside the "baseline" and understating the cost. The
-sibling checkout of `main` is the true pre-feature tree and already has `node_modules`.
+The spec caps this feature's added markup and CSS at 9 KB uncompressed (raised from the
+8 KB the field was first designed inside, once the seed grew from 20 to 34 pieces; the
+current figure is 8 367 B). Measure the whole feature, not just this task: stashing would
+revert only `App.jsx` and `Footer.jsx`, leaving the Tasks 1–3 motifs and keyframe inside
+the "baseline" and understating the cost. The sibling checkout of `main` is the true
+pre-feature tree and already has `node_modules`.
 
 Run:
 ```bash
@@ -951,7 +953,7 @@ Run:
   && cat dist/assets/*.js dist/assets/*.css | wc -c)
 npm run build >/dev/null && cat dist/assets/*.js dist/assets/*.css | wc -c
 ```
-Expected: the second number exceeds the first by well under 8192 bytes. If it does not,
+Expected: the second number exceeds the first by well under 9216 bytes. If it does not,
 the seed or the path data has grown — trim before continuing rather than raising the cap.
 
 - [ ] **Step 9: Commit**

@@ -287,7 +287,10 @@ a piece reads at the same physical size wherever it lands. The two together make
 non-uniform — fixed-size pieces pack far tighter on a 390 px phone than on a 1440 px
 desktop — and because no choice of `x` and `y` can undo that, density is managed instead of
 merely accepted: each entry carries the viewport width below which it is hidden, 16 are
-desktop-only and 18 render at every width. The breakpoint comes from `matchMedia` rather
+desktop-only and 18 render at every width. Those 18 are picked for the motif area they
+carry rather than being the remainder after the desktop-only pieces are set aside, so the
+narrow field holds more of the field than the twenty-piece version it supersedes and no
+two of its pieces overlap at 390 px. The breakpoint comes from `matchMedia` rather
 than a CSS media query because a `display: none` rule leaves all 34 elements in the tree,
 and a field that is hidden is still measured. The field is decorative and the layer clips
 whatever falls outside it either way. Placement is spread across the width rather than
@@ -396,7 +399,11 @@ Vitest and React Testing Library cover the only logic and invariants in the proj
    base rotation on `rotate` with no `transform`, durations and delays that genuinely
    vary — and the narrow field is asserted to be the `minWidth: 0` set rather than the
    first 18 entries, since a truncated seed renders the right number of motifs in the
-   wrong places — and the layer's `aria-hidden`, `pointer-events-none`, `z-0`, `fixed`,
+   wrong places. That set is additionally held to carrying more motif than the
+   twenty-piece field it replaced and to having no overlapping pair at 390 px, because a
+   count of 18 is satisfied equally by a field that thins out, and the breakpoint itself
+   is pinned, since the test stub answers `matchMedia` from the same constant the
+   component reads — and the layer's `aria-hidden`, `pointer-events-none`, `z-0`, `fixed`,
    `inset-0` and `overflow-hidden` are asserted alongside the `relative z-10` on `main`
    and the footer, because a field raised above the content satisfies every other test in
    the suite, and because `z-0` orders nothing unless the layer is actually `fixed` and

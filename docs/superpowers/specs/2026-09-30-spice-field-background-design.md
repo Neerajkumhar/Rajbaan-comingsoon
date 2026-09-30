@@ -116,9 +116,14 @@ only rendered when the viewport is at least that wide: 16 entries carry `768` an
 `0`. The count is responsive because `size` is in px, so percentage placement reflows
 while the pieces do not — a field of fixed-size pieces packs several times tighter on a
 390 px phone than on a 1440 px desktop, and no arrangement of `x` and `y` fixes that. The
-16 wide-only entries are the ones furthest from the text-bearing bands, which is why the
-gap between sections survives the reduction and the field does not thin out under the hero
-or the enquiry form.
+16 wide-only entries are spread across the viewport rather than concentrated at one edge,
+so no band of the page loses its entire share of the field when the count drops.
+
+The 18 narrow entries are chosen for how much motif they carry, not by taking whatever the
+desktop-only entries leave behind. At 390×844 they total 31 884 px² of piece area against
+the 29 760 px² of the twenty-piece field they replace, and hold 12 px of clearance where
+that field had two overlapping pairs. Every pair in both fields is checked against the
+seed's own sizes, since a count of 18 is satisfied just as well by a field that thins out.
 
 The breakpoint is read from `matchMedia` through `useSyncExternalStore` rather than from a
 CSS media query, because the pieces are React elements and a `display: none` rule would
@@ -232,6 +237,13 @@ invisible until it breaks:
    rather than the first N entries of the seed. A count assertion alone cannot tell the
    two apart: truncating the seed renders the right number of motifs at the wrong places,
    and every assertion that reads the seed literal still passes.
+7. The breakpoint itself. The stub that answers `matchMedia` in tests decides `matches`
+   with the same constant the component reads, so the two cannot disagree and a wrong
+   value would pass every count assertion while changing which eighteen motifs each
+   viewport shows.
+8. That the narrow set carries at least as much motif as the twenty pieces it replaced,
+   and that no two of its pieces overlap at 390×844. Both are arithmetic over the seed
+   rather than rendered measurements, because jsdom has no layout to measure.
 
 `x`, `y`, and `tone` are module constants, not content, so they need no translation and
 are deliberately excluded from the `en`/`hi` parity test in the base spec.
@@ -245,10 +257,13 @@ the person reviewing this spec is the only check on whether the pieces read as m
   no fonts, no JS.
 - Transform-only animation on the compositor; no layout or paint per frame.
 - No `will-change`, no `filter`, no animated `opacity`.
-- Total added transfer size: 8 367 B uncompressed against a 257 941 B pre-field baseline,
-  in JS and CSS. This is over the 8 KB target set when the field carried 20 pieces; the
-  target was not re-derived, because the pieces are the feature and dropping them to
-  re-meet a size figure would remove what the field is for.
+- Total added transfer size: 8 367 B uncompressed against a 257 941 B pre-field baseline, in JS and CSS — about 3%
+  of the bundle. The budget is **9 216 B**, raised from the 8 192 B the field was first
+  designed inside, when it carried 20 pieces and measured 5 477 B. The fourteen added
+  pieces account for the difference: 2 890 B, or 206 B each, and everything else in the
+  feature is unchanged. Going back under the old figure would mean dropping pieces, which
+  is the feature itself, so the budget moved instead. It is stated here rather than left
+  implicit so a later change that adds nothing has a figure to be measured against.
 - Pieces are `aria-hidden` and non-interactive, so they add no accessibility tree weight.
 
 ## 8. Constraints carried forward

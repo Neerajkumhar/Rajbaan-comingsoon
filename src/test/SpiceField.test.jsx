@@ -215,6 +215,14 @@ describe('SpiceField', () => {
     expect(hidden.length + shown.length).toBe(PIECES.length)
   })
 
+  it('breaks at the width the spec names', () => {
+    // The stub above decides `matches` with this same constant, so the two cannot drift
+    // apart and a breakpoint edit would be invisible: '(min-width: 1024px)' passes every
+    // other test in this file while silently changing which eighteen motifs every phone
+    // visitor sees. The specs name 768, so it is asserted here rather than shared.
+    expect(WIDE_QUERY).toBe('(min-width: 768px)')
+  })
+
   it('renders every seeded piece at a wide viewport', () => {
     const { svgs } = renderField()
     expect(svgs).toHaveLength(34)
@@ -247,6 +255,29 @@ describe('SpiceField', () => {
       )
       expect(stillThere).toBe(false)
     }
+  })
+
+  it('gives the narrow field more motif than the twenty pieces it replaced', () => {
+    // The phone set is picked for area rather than being whatever the desktop-only
+    // entries leave behind, so that choice is asserted rather than left to the seed. An
+    // earlier version simply hid the two largest pieces and lost 17% of the phone's
+    // motif area, which no count assertion would have caught.
+    const narrow = PIECES.filter((piece) => piece.minWidth === 0)
+    const narrowArea = narrow.reduce((total, piece) => total + piece.size * piece.size, 0)
+    expect(narrowArea).toBeGreaterThan(29_760)
+    // Clearance is checked against the sizes, not by rendering: two pieces overlapping on
+    // a 390x844 screen is the failure mode area optimisation invites, and jsdom has no
+    // layout to notice it.
+    const overlaps = []
+    for (const [i, a] of narrow.entries()) {
+      for (const b of narrow.slice(i + 1)) {
+        const dx = (Math.abs(a.x - b.x) / 100) * 390
+        const dy = (Math.abs(a.y - b.y) / 100) * 844
+        const gap = Math.hypot(dx, dy) - ((a.size + b.size) / 2) * Math.SQRT2
+        if (gap < 0) overlaps.push(`${a.motif}(${a.x},${a.y})/${b.motif}(${b.x},${b.y})`)
+      }
+    }
+    expect(overlaps).toEqual([])
   })
 })
 
