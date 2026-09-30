@@ -17,12 +17,17 @@
   --font-body: 'Noto Sans Devanagari', system-ui, sans-serif;
 }
 
+/* The loop distance is one viewport width, not half the track. A -50% endpoint is the
+   usual trick, but it only lands on the seam when the track is at least twice the
+   viewport; at nine names per copy it was 1.33x, so the track's right edge cleared the
+   screen and the last third of every cycle showed blank maroon. Translating exactly
+   -100vw puts the seam at the viewport edge for any copy count and any screen. */
 @keyframes marquee-scroll {
   from {
     transform: translateX(0);
   }
   to {
-    transform: translateX(-50%);
+    transform: translateX(-100vw);
   }
 }
 
