@@ -1,18 +1,42 @@
 import { render } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import App from '../App.jsx'
 import { SpiceField } from '../components/SpiceField.jsx'
-import { PIECES, MOTIFS, TONES } from '../components/SpiceField.jsx'
+import { PIECES, MOTIFS, TONES, WIDE_QUERY } from '../components/SpiceField.jsx'
+
+// The shared setup stubs matchMedia to match nothing, which would render the narrow
+// field and quietly hold every count in this file to 18. Default to the wide viewport —
+// the state that renders the whole seed — and let the narrow tests ask for their own.
+function setWideViewport(isWide) {
+  window.matchMedia = (query) => ({
+    matches: query === WIDE_QUERY && isWide,
+    media: query,
+    onchange: null,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+    dispatchEvent: () => false,
+  })
+}
+
+beforeEach(() => {
+  setWideViewport(true)
+})
 
 function renderField() {
   const { container } = render(<SpiceField />)
-  return { layer: container.firstChild, pieces: container.querySelectorAll('svg.animate-drift') }
+  return {
+    layer: container.firstChild,
+    svgs: container.querySelectorAll('svg'),
+    pieces: container.querySelectorAll('svg.animate-drift'),
+  }
 }
 
 describe('SpiceField', () => {
-  it('renders exactly the 20 seeded pieces', () => {
+  it('renders exactly the 34 seeded pieces', () => {
     const { pieces } = renderField()
-    expect(PIECES).toHaveLength(20)
+    expect(PIECES).toHaveLength(34)
     expect(pieces).toHaveLength(PIECES.length)
   })
 
@@ -149,7 +173,16 @@ describe('SpiceField', () => {
   })
 
   it('keeps drift amplitude, duration and rotation in the specified range', () => {
+    // Every seeded entry, so the sixteen added with the responsive count are held to the
+    // same bands as the original twenty. `rotate` and `size` are checked here because
+    // this is the seed's range test; a piece outside either band is as much a departure
+    // as a drift amplitude of 2px. `delay` must stay negative so a piece starts
+    // mid-cycle rather than sitting at its origin until the first keyframe tick.
     for (const piece of PIECES) {
+      expect(piece.size).toBeGreaterThanOrEqual(30)
+      expect(piece.size).toBeLessThanOrEqual(54)
+      expect(piece.rotate).toBeGreaterThanOrEqual(-30)
+      expect(piece.rotate).toBeLessThanOrEqual(30)
       expect(Math.abs(parseFloat(piece.driftX))).toBeGreaterThanOrEqual(4)
       expect(Math.abs(parseFloat(piece.driftX))).toBeLessThanOrEqual(10)
       expect(Math.abs(parseFloat(piece.driftY))).toBeGreaterThanOrEqual(4)
@@ -158,6 +191,61 @@ describe('SpiceField', () => {
       expect(Math.abs(parseFloat(piece.driftR))).toBeLessThanOrEqual(3)
       expect(piece.duration).toBeGreaterThanOrEqual(20)
       expect(piece.duration).toBeLessThanOrEqual(40)
+      expect(piece.delay).toBeLessThan(0)
+    }
+  })
+
+  it('marks every piece with one of the two viewport widths', () => {
+    // Only these two values exist, so `minWidth` can be compared with === and a typo
+    // cannot pass as "visible everywhere" — a piece carrying minWidth: 700 would never
+    // render at any width if the narrow set were selected by that comparison.
+    for (const piece of PIECES) {
+      expect([0, 768]).toContain(piece.minWidth)
+    }
+  })
+
+  it('reserves 16 pieces for the wide field and leaves 18 for the narrow one', () => {
+    // Both counts are the contract, so both are pinned: a seed that quietly grew a
+    // seventeenth desktop-only piece would render 19 on a phone, and no rendering
+    // assertion below would notice.
+    const hidden = PIECES.filter((piece) => piece.minWidth === 768)
+    const shown = PIECES.filter((piece) => piece.minWidth === 0)
+    expect(hidden).toHaveLength(16)
+    expect(shown).toHaveLength(18)
+    expect(hidden.length + shown.length).toBe(PIECES.length)
+  })
+
+  it('renders every seeded piece at a wide viewport', () => {
+    const { svgs } = renderField()
+    expect(svgs).toHaveLength(34)
+  })
+
+  it('renders only the 18 narrow pieces below the breakpoint', () => {
+    setWideViewport(false)
+    const { svgs } = renderField()
+    expect(svgs).toHaveLength(18)
+  })
+
+  it('selects the narrow pieces by their minWidth, not by truncating the seed', () => {
+    // The count alone cannot tell selection from truncation: dropping the last 18
+    // entries renders 18 pieces too, and would silently un-pin every motif, tone and
+    // placement the wide field depends on. Compare positions, so the wide-only pieces
+    // have to be the exact ones that disappear.
+    setWideViewport(false)
+    const { pieces } = renderField()
+    const narrow = PIECES.filter((piece) => piece.minWidth === 0)
+    expect(pieces).toHaveLength(narrow.length)
+    expect([...pieces].map((el) => `${el.style.left}/${el.style.top}`)).toEqual(
+      narrow.map((piece) => `${piece.x}%/${piece.y}%`),
+    )
+    for (const piece of PIECES) {
+      if (piece.minWidth === 0) continue
+      // Both coordinates, not `left` alone: two seeded pieces share an x (26 is taken
+      // twice), so a single-coordinate check would report a surviving wide-only piece.
+      const stillThere = [...pieces].some(
+        (el) => el.style.left === `${piece.x}%` && el.style.top === `${piece.y}%`,
+      )
+      expect(stillThere).toBe(false)
     }
   })
 })

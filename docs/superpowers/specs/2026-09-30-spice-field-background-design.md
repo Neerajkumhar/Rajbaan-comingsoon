@@ -100,15 +100,33 @@ A new component rendering one fixed, full-viewport layer:
 - `aria-hidden="true"` — decorative only, must never reach assistive tech.
 - `pointer-events-none` — must not intercept clicks on the WhatsApp FAB or buttons.
 - `fixed inset-0 z-0 overflow-hidden` — one layer for the whole page, not per section.
-- Exactly 20 pieces drawn from a **hardcoded** seed array. Each entry carries twelve
-  fields: `motif`, `x`, `y`, `size`, `rotate`, `opacity`, `duration`, `delay`, `tone`, and
-  the three drift amplitudes `driftX`, `driftY` and `driftR`, which reach the keyframe as
-  the `--drift-*` custom properties in §4.5.
+- Exactly 34 pieces drawn from a **hardcoded** seed array, of which 18 render below
+  768 px. Each entry carries thirteen fields: `motif`, `x`, `y`, `size`, `rotate`,
+  `opacity`, `duration`, `delay`, `tone`, `minWidth`, and the three drift amplitudes
+  `driftX`, `driftY` and `driftR`, which reach the keyframe as the `--drift-*` custom
+  properties in §4.5.
 
 `x` and `y` are percentages of the viewport, so the field reflows with width instead of
 drifting toward one edge on wide screens. `size` is px. `rotate` is a static base
 rotation in degrees, distinct from the animated rotation in §4.5. `opacity` is the static
 alpha of §4.6, never animated. `tone` is a `@theme` token name.
+
+`minWidth` is the viewport width in px below which a piece is not rendered, and a piece is
+only rendered when the viewport is at least that wide: 16 entries carry `768` and 18 carry
+`0`. The count is responsive because `size` is in px, so percentage placement reflows
+while the pieces do not — a field of fixed-size pieces packs several times tighter on a
+390 px phone than on a 1440 px desktop, and no arrangement of `x` and `y` fixes that. The
+16 wide-only entries are the ones furthest from the text-bearing bands, which is why the
+gap between sections survives the reduction and the field does not thin out under the hero
+or the enquiry form.
+
+The breakpoint is read from `matchMedia` through `useSyncExternalStore` rather than from a
+CSS media query, because the pieces are React elements and a `display: none` rule would
+leave all 34 of them in the tree — painted by nothing, announced by nothing, and still
+counted by anything that measures the field. Removing them keeps the rendered node count
+honest. There is no server render in this app, so the store's server snapshot is a
+constant; it exists because `useSyncExternalStore` requires one, not because anything
+consults it.
 
 The seed is hardcoded rather than randomised at runtime, deliberately. Random placement
 would differ between renders, which makes the field impossible to assert in a test and
@@ -124,10 +142,10 @@ One new `@keyframes drift` in `src/index.css`:
 
 - Translates 4–10 px on each axis and rotates 1–3°, `ease-in-out`, `infinite alternate`,
   20–40 s per piece, staggered by a negative `delay` so pieces are not in lockstep.
-- One keyframe serves all 20 pieces. Per-piece amplitude comes from the CSS custom
+- One keyframe serves all 34 pieces. Per-piece amplitude comes from the CSS custom
   properties `--drift-x`, `--drift-y`, and `--drift-r`, read inside the keyframe; per-piece
   duration and delay are set with inline `animationDuration` and `animationDelay`, which
-  override the shorthand on `.animate-drift`. No 20 near-duplicate keyframes.
+  override the shorthand on `.animate-drift`. No 34 near-duplicate keyframes.
 - A piece's **base** rotation is set with the individual `rotate` property, not
   `transform`. CSS applies `translate`/`rotate`/`scale` before `transform`, so the base
   rotation composes with the keyframe's `transform` rather than being overwritten by it.
@@ -135,10 +153,10 @@ One new `@keyframes drift` in `src/index.css`:
   animation on every frame.
 - `alternate` returns each piece to its origin, so the field never drifts out of frame
   over a long visit.
-- Opacity is **static per piece** and never animated. An animated `opacity` on 20
+- Opacity is **static per piece** and never animated. An animated `opacity` on 34
   elements forces repaint on every frame and drops frames on low-end mobile; transform
   animation stays on the compositor.
-- No `will-change: transform`. Promoting 20 permanent layers costs more memory than the
+- No `will-change: transform`. Promoting 34 permanent layers costs more memory than the
   compositor saves on animations this slow.
 
 ### 4.6 Opacity and colour
@@ -210,6 +228,10 @@ invisible until it breaks:
 5. The four tone class names are pinned as literals. Tailwind emits them from the `@theme`
    tokens at build time, so `src/index.css` cannot be scanned for them; the emitted name is
    as far as the suite can reach, and the build is what turns it into a rule.
+6. The rendered count at each width, and that the narrow field is the `minWidth: 0` set
+   rather than the first N entries of the seed. A count assertion alone cannot tell the
+   two apart: truncating the seed renders the right number of motifs at the wrong places,
+   and every assertion that reads the seed literal still passes.
 
 `x`, `y`, and `tone` are module constants, not content, so they need no translation and
 are deliberately excluded from the `en`/`hi` parity test in the base spec.
@@ -219,10 +241,14 @@ the person reviewing this spec is the only check on whether the pieces read as m
 
 ## 7. Performance budget
 
-- 20 inline SVG elements, each a handful of paths. No images, no fonts, no JS.
+- 34 inline SVG elements above 768 px, 18 below it, each a handful of paths. No images,
+  no fonts, no JS.
 - Transform-only animation on the compositor; no layout or paint per frame.
 - No `will-change`, no `filter`, no animated `opacity`.
-- Total added transfer size target: under 8 KB, uncompressed, in markup and CSS.
+- Total added transfer size: 8 367 B uncompressed against a 257 941 B pre-field baseline,
+  in JS and CSS. This is over the 8 KB target set when the field carried 20 pieces; the
+  target was not re-derived, because the pieces are the feature and dropping them to
+  re-meet a size figure would remove what the field is for.
 - Pieces are `aria-hidden` and non-interactive, so they add no accessibility tree weight.
 
 ## 8. Constraints carried forward

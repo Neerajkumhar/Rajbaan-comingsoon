@@ -116,8 +116,10 @@ marigold wash behind the logo.
 Both CTAs must be usable at 360 px width without wrapping or clipping, and the
 44×44 px minimum touch target applies to both.
 
-- **Spice field:** one fixed `z-0` layer behind the whole page, carrying exactly 20
-  hand-drawn masala and dry-fruit pieces on a single transform-only drift keyframe. It is
+- **Spice field:** one fixed `z-0` layer behind the whole page, carrying 34 hand-drawn
+  masala and dry-fruit pieces on a single transform-only drift keyframe — all 34 above
+  768 px, 18 below it, because fixed-size pieces cannot reflow with width and a field
+  dense enough to read on a desktop is a thicket on a phone. It is
   `aria-hidden` and `pointer-events-none`. Its contract spans a four-step ladder: the layer
   at `z-0`, `main` and the footer at `relative z-10`, the sticky header at `z-40`, and the
   WhatsApp FAB at `z-50`. The field/content pair is the part that holds the page together
@@ -201,25 +203,25 @@ Five effects only, all hand-written — no animation library.
 3. **Marquee scroll** — pure CSS keyframes, duplicated content, linear, 30 s per loop.
 4. **Card hover lift** — 2 px translate and shadow deepening, gated behind
    `@media (hover: hover) and (pointer: fine)` so it never sticks on touch devices.
-5. **Field drift** — the field's 20 pieces each translate within a 4–10 px band per axis
+5. **Field drift** — the field's 34 pieces each translate within a 4–10 px band per axis
    and rotate 1–3° over 20–40 s, `ease-in-out`, `infinite alternate`, staggered by a
    negative delay so they are not in lockstep. The band is the constraint, not the spread:
-   as shipped the seed runs 6–10 px on X, 4–10 px on Y, and 24–39 s. Slow enough to read as
+   as shipped the seed runs 4–10 px on each axis, and 22–39 s. Slow enough to read as
    ambient rather than as motion on the page.
 
-One keyframe serves all 20 pieces. Per-piece amplitude arrives through the `--drift-x`,
+One keyframe serves all 34 pieces. Per-piece amplitude arrives through the `--drift-x`,
 `--drift-y` and `--drift-r` custom properties read inside the keyframe, and per-piece
-duration and delay are set inline, overriding the shorthand — twenty near-duplicate
-keyframes would be a worse trade than twenty inline values. A piece's *base* rotation
+duration and delay are set inline, overriding the shorthand — thirty-four near-duplicate
+keyframes would be a worse trade than thirty-four inline values. A piece's *base* rotation
 rides the individual `rotate` property rather than `transform`, because CSS applies
 `rotate` before `transform` and the two therefore compose; carried on `transform` instead,
 the keyframe would overwrite it on every frame. `alternate` returns every piece to its
 origin, so nothing drifts out of frame over a long visit.
 
 `transform` is the only thing that animates. Per-piece opacity is static, between 0.10 and
-0.18, and is never animated: an animated opacity across 20 elements repaints every frame
+0.18, and is never animated: an animated opacity across 34 elements repaints every frame
 and drops frames on low-end mobile, where transform stays on the compositor. There is no
-`will-change` either — promoting 20 permanent layers costs more memory than the compositor
+`will-change` either — promoting 34 permanent layers costs more memory than the compositor
 saves on animation this slow. Nothing in the field runs per frame except the compositor:
 no canvas, no WebGL, no animation library, no per-frame JavaScript.
 
@@ -256,7 +258,7 @@ src/components/Enquiry.jsx
 src/components/Footer.jsx
 src/components/WhatsAppFab.jsx
 src/components/ContactButtons.jsx   the shared WhatsApp + call button pair
-src/components/SpiceField.jsx       the fixed background layer and its 20-piece seed
+src/components/SpiceField.jsx       the fixed background layer and its 34-piece seed
 src/components/SpiceMotif.jsx       ten named inline SVG exports, each with a `solid` variant
 src/hooks/useReveal.js
 ```
@@ -273,18 +275,22 @@ draws from `SpiceMotif` and nothing draws from it, so the field can be deleted i
 one commit without touching a motif, and a new motif needs only naming in the seed.
 
 `SpiceField` is also the one component that carries its own data instead of reading
-`content.js`: a hardcoded 20-entry seed, one entry per piece, holding that piece's twelve
-fields — `motif`, `x`, `y`, `size`, `rotate`, `opacity`, `duration`, `delay`, `tone`, and
-the drift amplitudes `driftX`, `driftY` and `driftR`, which reach the keyframe as the
-`--drift-*` custom properties in section 6. The seed
+`content.js`: a hardcoded 34-entry seed, one entry per piece, holding that piece's
+thirteen fields — `motif`, `x`, `y`, `size`, `rotate`, `opacity`, `duration`, `delay`,
+`tone`, `minWidth`, and the drift amplitudes `driftX`, `driftY` and `driftR`, which reach
+the keyframe as the `--drift-*` custom properties in section 6. The seed
 is written out rather than randomised at render time, deliberately — a random field
 differs between renders, so it can neither be asserted in a test nor reviewed, and a
 defect in it would not reproduce. `x` and `y` are viewport percentages, so the field
 reflows with width instead of crowding one edge on a wide screen; `size` stays in px, so
 a piece reads at the same physical size wherever it lands. The two together make density
-deliberately non-uniform — 20 fixed-size pieces pack far tighter on a 390 px phone than on
-a 1440 px desktop — which is acceptable because the field is decoration and the layer
-clips whatever falls outside it. Placement is spread across the width rather than
+non-uniform — fixed-size pieces pack far tighter on a 390 px phone than on a 1440 px
+desktop — and because no choice of `x` and `y` can undo that, density is managed instead of
+merely accepted: each entry carries the viewport width below which it is hidden, 16 are
+desktop-only and 18 render at every width. The breakpoint comes from `matchMedia` rather
+than a CSS media query because a `display: none` rule leaves all 34 elements in the tree,
+and a field that is hidden is still measured. The field is decorative and the layer clips
+whatever falls outside it either way. Placement is spread across the width rather than
 clustered at the edges, because a field that thins out across the horizontal centre
 leaves the part of the page the visitor is actually looking at the emptiest.
 
@@ -386,9 +392,11 @@ Vitest and React Testing Library cover the only logic and invariants in the proj
    shared viewBox, and the drift keyframe is read for the `--drift-*` custom properties it
    actually reads rather than matched against the whole stylesheet, so a comment naming
    them cannot stand in for a keyframe that baked in constants. The seed is pinned to its
-   constraints — 20 pieces, opacity 0.10–0.18, drift 4–10 px per axis and 1–3°, 20–40 s,
+   constraints — 34 pieces, opacity 0.10–0.18, drift 4–10 px per axis and 1–3°, 20–40 s,
    base rotation on `rotate` with no `transform`, durations and delays that genuinely
-   vary — and the layer's `aria-hidden`, `pointer-events-none`, `z-0`, `fixed`,
+   vary — and the narrow field is asserted to be the `minWidth: 0` set rather than the
+   first 18 entries, since a truncated seed renders the right number of motifs in the
+   wrong places — and the layer's `aria-hidden`, `pointer-events-none`, `z-0`, `fixed`,
    `inset-0` and `overflow-hidden` are asserted alongside the `relative z-10` on `main`
    and the footer, because a field raised above the content satisfies every other test in
    the suite, and because `z-0` orders nothing unless the layer is actually `fixed` and
