@@ -28,17 +28,17 @@ asset enters the repository.
 - `src/components/SpiceMotif.jsx` exports `StarAnise`, `Chilli`, `Cashew`. All share a
   `base` object: `viewBox="0 0 48 48"`, `fill: 'none'`, `stroke: 'currentColor'`,
   `strokeWidth: 1.5`, round caps and joins, `aria-hidden: 'true'`, `className: 'h-12 w-12'`.
-  `className` in `base` is a default that callers override — `Categories.jsx:25` passes
-  `h-12 w-12 text-maroon`.
+  `className` in `base` is a default that callers override — `Categories.jsx` passes
+  `mx-auto h-12 w-12 text-maroon`.
 - `src/components/Categories.jsx` maps translation keys to motifs through a `MOTIFS`
   lookup keyed on `item.motif`.
-- `src/index.css:20-48` defines `@keyframes marquee-scroll` and `@keyframes badge-pulse`
+- `src/index.css` defines `@keyframes marquee-scroll` and `@keyframes badge-pulse`
   with `.animate-marquee` / `.animate-badge-pulse` wrappers.
-- `src/index.css:80-95` is the single `prefers-reduced-motion: reduce` block. It
-  disables both existing animations and neutralises `.reveal`.
-- `TopBar.jsx:10` is `sticky top-0 z-40`. `WhatsAppFab.jsx:11` is `fixed right-4 z-50`.
+- The single `prefers-reduced-motion: reduce` block in `src/index.css` disables both
+  existing animations and neutralises `.reveal`.
+- `TopBar` is `sticky top-0 z-40`. `WhatsAppFab` is `fixed right-4 z-50`.
   `main` and `Footer` have no positioning or z-index.
-- Palette tokens live in `@theme` at `src/index.css:3-18`: `ink`, `maroon`, `marigold`,
+- Palette tokens live in the `@theme` block in `src/index.css`: `ink`, `maroon`, `marigold`,
   `turmeric`, `cashew`, `parchment`, `whatsapp`, `whatsapp-deep`.
 
 ## 4. Decisions
@@ -67,7 +67,8 @@ Seven added to `SpiceMotif.jsx`, matching the existing `0 0 48 48` viewBox and
 | `Raisin`   | irregular wrinkled blob | yes        |
 
 Ten motifs total. Every one must be drawn so its silhouette is identifiable in
-silhouette at 28–44 px. `Categories.jsx` does not change and continues to use only the
+silhouette at 30–54 px — the band the seed actually draws in, which reaches wider than a
+card-sized icon does. `Categories.jsx` does not change and continues to use only the
 original three.
 
 ### 4.3 A `solid` variant
@@ -85,9 +86,9 @@ slab at full strength, and is not field-specific special-casing — it is correc
 filled icon.
 
 The stroke is deliberately kept rather than switched off. Every existing motif is drawn
-with **open** paths — `Chilli` at `SpiceMotif.jsx:29` starts at `M26 10` and its last
-cubic ends at `(11, 33)`, never returning to the start — so `stroke: 'none'` would leave
-a fill that auto-closes the path into whatever shape the straight line happens to cut.
+with **open** paths — `Chilli`'s first path in `SpiceMotif.jsx` starts at `M26 10` and its
+cubic ends at `(11, 33)`, never returning to the start — so `stroke: 'none'` would leave a
+fill that auto-closes the path into whatever shape the straight line happens to cut.
 Keeping the stroke makes the variant safe for open and closed paths alike, which is the
 only reason it can be trusted for artwork whose appearance cannot be reviewed.
 
@@ -98,13 +99,15 @@ A new component rendering one fixed, full-viewport layer:
 - `aria-hidden="true"` — decorative only, must never reach assistive tech.
 - `pointer-events-none` — must not intercept clicks on the WhatsApp FAB or buttons.
 - `fixed inset-0 z-0 overflow-hidden` — one layer for the whole page, not per section.
-- Exactly 20 pieces drawn from a **hardcoded** seed array. Each entry carries
-  `motif`, `x`, `y`, `size`, `rotate`, `duration`, `delay`, `tone`.
+- Exactly 20 pieces drawn from a **hardcoded** seed array. Each entry carries twelve
+  fields: `motif`, `x`, `y`, `size`, `rotate`, `opacity`, `duration`, `delay`, `tone`, and
+  the three drift amplitudes `driftX`, `driftY` and `driftR`, which reach the keyframe as
+  the `--drift-*` custom properties in §4.5.
 
 `x` and `y` are percentages of the viewport, so the field reflows with width instead of
 drifting toward one edge on wide screens. `size` is px. `rotate` is a static base
-rotation in degrees, distinct from the animated rotation in §4.5. `tone` is a
-`@theme` token name.
+rotation in degrees, distinct from the animated rotation in §4.5. `opacity` is the static
+alpha of §4.6, never animated. `tone` is a `@theme` token name.
 
 The seed is hardcoded rather than randomised at runtime, deliberately. Random placement
 would differ between renders, which makes the field impossible to assert in a test and
@@ -153,9 +156,10 @@ decision the agent cannot make — see constraint §8.
 
 ### 4.7 Reduced motion
 
-The field's animation is added to the existing `prefers-reduced-motion: reduce` block at
-`src/index.css:80`. Pieces still render, at their static positions. The effect is
-removed; the page does not lose content.
+The field's animation is added to the existing `prefers-reduced-motion: reduce` block —
+the single such block in `src/index.css`, which already neutralises `.animate-marquee`,
+`.animate-badge-pulse` and `.reveal`. Pieces still render, at their static positions. The
+effect is removed; the page does not lose content.
 
 ### 4.8 Stacking
 

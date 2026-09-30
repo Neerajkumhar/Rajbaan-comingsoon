@@ -48,14 +48,14 @@ ticker band as the primary "Indian" signal. Mobile-first throughout.
 The logo carries no colour (solid black ink), so the palette is derived from the
 product category.
 
-| Token           | Hex       | Use                                  |
-| --------------- | --------- | ------------------------------------ |
-| `ink`       | `#1A1512` | Body text, dark sections              |
-| `maroon`    | `#7B1E1E` | Enquiry band, marquee band            |
-| `marigold`  | `#E8A33D` | Primary accent, rules, icon strokes   |
-| `turmeric`  | `#F4B942` | Badge, hover states, highlight text   |
-| `cashew`    | `#F7F1E6` | Page background                       |
-| `parchment` | `#EFE3CE` | Card fills on the cream background    |
+| Token           | Hex       | Use                                              |
+| --------------- | --------- | ------------------------------------------------ |
+| `ink`       | `#1A1512` | Body text, dark sections                         |
+| `maroon`    | `#7B1E1E` | Enquiry band, marquee band                       |
+| `marigold`  | `#E8A33D` | Primary accent, badge fill, rules, icon strokes  |
+| `turmeric`  | `#F4B942` | Focus ring, lighter gold tone on the field       |
+| `cashew`    | `#F7F1E6` | Page background                                  |
+| `parchment` | `#EFE3CE` | Card fills on the cream background               |
 
 Six tokens. No green in the palette — WhatsApp green appears only inside the WhatsApp
 buttons and the FAB, as a brand colour of the third-party service, never as a page
@@ -63,8 +63,11 @@ accent. That contrast is intentional: it makes the two WhatsApp CTAs the only gr
 elements on the page, so the eye finds them first.
 
 Contrast: all body text pairs `ink` on `cashew` (≥ 12:1) or `cashew` on `maroon`
-(≥ 7:1). Gold is never used for body text on cream — `marigold` on `cashew` fails
-contrast and is restricted to large display type, rules, and icons.
+(≥ 7:1). Text on any ground — a gold badge included — must clear **4.5:1**, the AA
+minimum for normal-size type; `ink` on `marigold` reaches 8.4:1, so a gold ground can
+carry a label. Gold is never used for body text *on cream* — `marigold` on `cashew` fails
+contrast at 1.9:1, so on `cashew` gold is restricted to large display type, rules, and
+icons.
 
 ### Typography
 
@@ -103,8 +106,8 @@ marigold wash behind the logo.
   `राजबान` in Devanagari display type, with `RAJBAAN` in letterspaced uppercase Latin
   beneath it. A brand lockup is not UI copy, so it does not change with the toggle.
 - **Tagline:** `Asli masale. Asli Swaad.` / `असली मसाला। असली स्वाद ।`
-- **Coming Soon badge:** pill in `marigold`, slow opacity pulse. Static text — no date,
-  no timer.
+- **Coming Soon badge:** pill in `marigold`, slow expanding-ring pulse. Static text — no
+  date, no timer.
 - **Primary CTA:** "WhatsApp us" → WhatsApp deep link with a prefilled message
   (exact text in 7.3).
 - **Secondary CTA:** "Call 9216487878" → `tel:` link, with the digits pulled from
@@ -115,11 +118,14 @@ Both CTAs must be usable at 360 px width without wrapping or clipping, and the
 
 - **Spice field:** one fixed `z-0` layer behind the whole page, carrying exactly 20
   hand-drawn masala and dry-fruit pieces on a single transform-only drift keyframe. It is
-  `aria-hidden` and `pointer-events-none`, and the content sits above it as a pair: `main`
-  and the footer are `relative z-10` against the field's own `z-0`. Both halves are
-  load-bearing. A `z-10` without `relative` orders nothing, and a field raised above
-  `z-10` paints over the content while still letting it be clicked — a fault that reads
-  as missing text rather than as a stacking bug. Fully specified in
+  `aria-hidden` and `pointer-events-none`. Its contract spans a four-step ladder: the layer
+  at `z-0`, `main` and the footer at `relative z-10`, the sticky header at `z-40`, and the
+  WhatsApp FAB at `z-50`. The field/content pair is the part that holds the page together
+  — both halves are load-bearing, because a `z-10` without `relative` orders nothing, and
+  a field raised above `z-10` paints over the content while still letting it be clicked, a
+  fault that reads as missing text rather than as a stacking bug. The header's own `z-40`
+  is load-bearing for the same reason: `main` sits at `z-10`, so a sticky header with no
+  z-index would paint *below* the content scrolling under it. Fully specified in
   `2026-09-30-spice-field-background-design.md`.
 
 ### 4.3 Marquee
@@ -163,9 +169,9 @@ invisible on `ink`.
 ### 4.8 WhatsAppFab
 Fixed bottom-right circular button, WhatsApp green, 56 px, with an iOS safe-area inset.
 Visible on all viewports. `aria-hidden`, because the same action is available as a
-labelled button in the hero and the enquiry band. The footer carries 112 px of bottom
-padding, comfortably past the FAB height plus 16 px, so the FAB can never sit on top of
-footer text on a short viewport.
+labelled button in the hero and the enquiry band. The footer carries **at least** the FAB
+height plus 16 px of bottom padding — 112 px as shipped, against a 56 px FAB — so the FAB
+can never sit on top of footer text on a short viewport.
 
 ## 5. Bilingual content
 
@@ -190,15 +196,16 @@ Five effects only, all hand-written — no animation library.
    observer disconnects after firing.
 2. **Badge pulse** — a marigold ring expands out of the badge and fades away, over 2.4 s,
    `ease-in-out`, infinite. A ring rather than an opacity fade: fading the badge to 0.55
-   dropped its label to 2.77:1 against `marigold`, under the 4.5:1 minimum, for part of
-   every cycle.
+   dropped its label to 2.77:1 against `marigold`, under the 4.5:1 minimum in section 3,
+   for part of every cycle.
 3. **Marquee scroll** — pure CSS keyframes, duplicated content, linear, 30 s per loop.
 4. **Card hover lift** — 2 px translate and shadow deepening, gated behind
    `@media (hover: hover) and (pointer: fine)` so it never sticks on touch devices.
-5. **Field drift** — the field's 20 pieces each translate 4–10 px on each axis and rotate
-   1–3° over 20–40 s, `ease-in-out`, `infinite alternate`, staggered by a negative delay
-   so they are not in lockstep. Slow enough to read as ambient rather than as motion on
-   the page.
+5. **Field drift** — the field's 20 pieces each translate within a 4–10 px band per axis
+   and rotate 1–3° over 20–40 s, `ease-in-out`, `infinite alternate`, staggered by a
+   negative delay so they are not in lockstep. The band is the constraint, not the spread:
+   as shipped the seed runs 6–10 px on X, 4–10 px on Y, and 24–39 s. Slow enough to read as
+   ambient rather than as motion on the page.
 
 One keyframe serves all 20 pieces. Per-piece amplitude arrives through the `--drift-x`,
 `--drift-y` and `--drift-r` custom properties read inside the keyframe, and per-piece
@@ -259,14 +266,16 @@ because the WhatsApp/call pair appears in both the hero and the enquiry band and
 be copy-pasted — the prefilled message and the `tel:` target are defined once in
 `contact.js` and rendered once, in that component. Everything else reads from
 `content.js` and `LanguageContext`. No section knows about any other section, and the
-language context is the only state in the project. `SpiceField` is the one import between
-components, and it points the safe way: it draws from `SpiceMotif` and nothing draws from
-it, so the field can be deleted in one commit without touching a motif, and a new motif
-needs only naming in the seed.
+language context is the only state in the project. `SpiceField` → `SpiceMotif` is the only
+import between components other than the shared `ContactButtons`, and it points the safe
+way: it draws from `SpiceMotif` and nothing draws from it, so the field can be deleted in
+one commit without touching a motif, and a new motif needs only naming in the seed.
 
 `SpiceField` is also the one component that carries its own data instead of reading
-`content.js`: a hardcoded 20-entry seed, one entry per piece, holding that piece's
-`motif`, `x`, `y`, `size`, `rotate`, `duration`, `delay`, `tone`, and `opacity`. The seed
+`content.js`: a hardcoded 20-entry seed, one entry per piece, holding that piece's twelve
+fields — `motif`, `x`, `y`, `size`, `rotate`, `opacity`, `duration`, `delay`, `tone`, and
+the drift amplitudes `driftX`, `driftY` and `driftR`, which reach the keyframe as the
+`--drift-*` custom properties in section 6. The seed
 is written out rather than randomised at render time, deliberately — a random field
 differs between renders, so it can neither be asserted in a test nor reviewed, and a
 defect in it would not reproduce. `x` and `y` are viewport percentages, so the field
@@ -362,7 +371,7 @@ is likewise replaced at deploy time.
 
 ## 8. Testing
 
-Vitest and React Testing Library cover the only logic in the project:
+Vitest and React Testing Library cover the only logic and invariants in the project:
 
 1. Every key in the `en` dictionary has a counterpart in `hi` (parity, run first so a
    missing translation fails before the more specific tests).
@@ -378,9 +387,14 @@ Vitest and React Testing Library cover the only logic in the project:
    them cannot stand in for a keyframe that baked in constants. The seed is pinned to its
    constraints — 20 pieces, opacity 0.10–0.18, drift 4–10 px per axis and 1–3°, 20–40 s,
    base rotation on `rotate` with no `transform`, durations and delays that genuinely
-   vary — and the layer's `aria-hidden`, `pointer-events-none`, `z-0` and `overflow-hidden`
-   are asserted alongside the `relative z-10` on `main` and the footer, because a field
-   raised above the content satisfies every other test in the suite.
+   vary — and the layer's `aria-hidden`, `pointer-events-none`, `z-0`, `fixed`,
+   `inset-0` and `overflow-hidden` are asserted alongside the `relative z-10` on `main`
+   and the footer, because a field raised above the content satisfies every other test in
+   the suite, and because `z-0` orders nothing unless the layer is actually `fixed` and
+   covers the viewport. The field's place in the page-wide stack is asserted at the
+   composition level for the same reason: the sticky header's `z-40` and the FAB's `z-50`
+   are checked against the content's `z-10`, since a sticky header with no z-index paints
+   below the content scrolling under it.
 
 Presentational markup is not unit-tested, except where a class name or inline style is
 itself the guarantee — which is the case for each field assertion in item 6. Visual
