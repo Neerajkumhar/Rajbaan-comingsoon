@@ -249,6 +249,14 @@ describe('the masala and dry-fruit motifs', () => {
       expect(svgOf(<Motif solid />)).toHaveAttribute('fill', 'currentColor')
     }
   })
+
+  it('never forwards solid to the DOM from any new motif', () => {
+    // Task 1 established that checking the rendered attribute cannot guard this: React 19
+    // drops an unknown boolean rather than writing it. Read the attribute object instead.
+    for (const [name, Motif] of Object.entries(NEW_MOTIFS)) {
+      expect(Motif({ solid: true }).props, name).not.toHaveProperty('solid')
+    }
+  })
 })
 ```
 
@@ -334,8 +342,8 @@ export function Raisin({ solid, ...props }) {
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `npx vitest run src/test/SpiceMotif.test.jsx`
-Expected: PASS — 27 tests: 4 from Step 1 plus `exports all seven`, three `it.each` blocks
-of 7, and `supports the solid variant`.
+Expected: PASS — 28 tests: 4 from Step 1 plus `exports all seven`, three `it.each` blocks
+of 7, `supports the solid variant`, and `never forwards solid to the DOM`.
 
 - [ ] **Step 5: Lint**
 
