@@ -1,6 +1,17 @@
 import { render } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { Cashew, Chilli, StarAnise } from '../components/SpiceMotif.jsx'
+import {
+  Almond,
+  BayLeaf,
+  Cardamom,
+  Cashew,
+  Chilli,
+  Cinnamon,
+  Clove,
+  Pepper,
+  Raisin,
+  StarAnise,
+} from '../components/SpiceMotif.jsx'
 
 function svgOf(element) {
   const { container } = render(element)
@@ -45,5 +56,41 @@ describe('the solid motif variant', () => {
 
   it('still lets a caller win on fill', () => {
     expect(svgOf(<Cashew solid fill="red" />)).toHaveAttribute('fill', 'red')
+  })
+})
+
+const NEW_MOTIFS = { Almond, BayLeaf, Cardamom, Cinnamon, Clove, Pepper, Raisin }
+
+describe('the masala and dry-fruit motifs', () => {
+  it('exports all seven', () => {
+    expect(Object.keys(NEW_MOTIFS)).toHaveLength(7)
+  })
+
+  it.each(Object.entries(NEW_MOTIFS))('draws %s on the shared viewBox', (name, Motif) => {
+    const svg = svgOf(<Motif />)
+    expect(svg).toHaveAttribute('viewBox', '0 0 48 48')
+    expect(svg).toHaveAttribute('stroke-width', '1.5')
+  })
+
+  it.each(Object.entries(NEW_MOTIFS))('hides %s from assistive technology', (name, Motif) => {
+    expect(svgOf(<Motif />)).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it.each(Object.entries(NEW_MOTIFS))('gives %s some ink to draw', (name, Motif) => {
+    expect(svgOf(<Motif />).children.length).toBeGreaterThan(0)
+  })
+
+  it('supports the solid variant on every new motif', () => {
+    for (const Motif of Object.values(NEW_MOTIFS)) {
+      expect(svgOf(<Motif solid />)).toHaveAttribute('fill', 'currentColor')
+    }
+  })
+
+  it('never forwards solid to the DOM from any new motif', () => {
+    // Task 1 established that checking the rendered attribute cannot guard this: React 19
+    // drops an unknown boolean rather than writing it. Read the attribute object instead.
+    for (const [name, Motif] of Object.entries(NEW_MOTIFS)) {
+      expect(Motif({ solid: true }).props, name).not.toHaveProperty('solid')
+    }
   })
 })
