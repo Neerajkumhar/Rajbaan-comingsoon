@@ -1892,7 +1892,7 @@ Accessibility fixes found by axe-core and the layout gate:
   below the 4.5:1 AA minimum. Added `--color-whatsapp-deep: #0f7a43` (5.41:1 with
   white) for the button and the FAB.
 - **Badge pulse failed contrast mid-animation.** The pulse faded opacity to 0.55,
-  dropping the label to 2.77:1 for part of every cycle. Rewrote the keyframes to pulse a
+  dropping the label to 3.1:1 against the badge for part of every cycle. Rewrote the keyframes to pulse a
   shadow ring instead, so the text holds full opacity in every frame and the effect
   stays safe under any future palette.
 - **The page had no `h1`.** The brand wordmark was a paragraph. It is now the single
